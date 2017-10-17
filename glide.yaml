@@ -1,0 +1,9 @@
+package: github.com/simonhayward/gkeepassxreader
+import:
+- package: github.com/sirupsen/logrus
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh/terminal
+- package: gopkg.in/alecthomas/kingpin.v2
+  version: ~2.2.5
+- package: github.com/alecthomas/units
