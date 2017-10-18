@@ -70,7 +70,7 @@ func main() {
 	}
 
 	if entry == nil {
-		fmt.Printf("Search term: '%s' not found\n", i.Search)
+		log.Fatalf("Search term: '%s' not found\n", i.Search)
 	} else {
 		fmt.Printf("Found\nTitle: %s\n", entry.Title)
 		if *clipboard {
@@ -83,7 +83,6 @@ func main() {
 			fmt.Printf("Password: %s\n", entry.PlainTextPassword)
 		}
 	}
-	return
 }
 
 // OpenDatabase with input params

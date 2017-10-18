@@ -54,7 +54,7 @@ type KeePass2Reader struct {
 	error              bool
 	errorStr           string
 	headerEnd          bool
-	XmlReader          *KeePass2XmlReader
+	XMLReader          *KeePass2XmlReader
 	masterSeed         []byte
 	transformSeed      []byte
 	encryptionIV       []byte
@@ -158,16 +158,13 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 		xmlDevice = bytes.NewReader(b)
 	}
 
-	/*
-		Random stream
-	*/
 	randomKey := sha256.Sum256(k.protectedStreamKey)
-	k.XmlReader, err = NewKeePass2XmlReader(xmlDevice, &randomKey)
+	k.XMLReader, err = NewKeePass2XmlReader(xmlDevice, &randomKey)
 	if err != nil {
 		return fmt.Errorf("cannot create new keepass2xml reader: %s", err)
 	}
 
-	xmlHeaderHash, err := k.XmlReader.HeaderHash()
+	xmlHeaderHash, err := k.XMLReader.HeaderHash()
 	if err != nil {
 		return fmt.Errorf("xml header hash error: %s", err)
 	}
@@ -189,7 +186,7 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 
 // SearchDatabase search database for search term
 func (k *KeePass2Reader) SearchDatabase(search string, chrs string) (*Entry, error) {
-	entry, err := k.XmlReader.Search(search)
+	entry, err := k.XMLReader.Search(search)
 	if err != nil {
 		return nil, err
 	}
