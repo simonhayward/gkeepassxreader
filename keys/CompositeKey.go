@@ -19,7 +19,7 @@ func (c *CompositeKey) AddKey(k Key) {
 	c.keys = append(c.keys, k)
 }
 
-//Transform the composite key return sha 256 sum
+//Transform the composite key returns the checksum of data
 func (c *CompositeKey) Transform(seed []byte, rounds uint64) ([]byte, error) {
 	if len(seed) != 32 {
 		return nil, fmt.Errorf("seed size error, expected: %d received: %d", 32, len(seed))
@@ -56,7 +56,7 @@ func (c *CompositeKey) Transform(seed []byte, rounds uint64) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-//RawKey returns the 256 sum of keys
+//RawKey returns the checksum of all keys combined
 func (c *CompositeKey) RawKey() []byte {
 
 	h := sha256.New()
@@ -69,6 +69,7 @@ func (c *CompositeKey) RawKey() []byte {
 }
 
 func (c *CompositeKey) transformKeyRaw(key []byte, seed []byte, rounds uint64, result *[]byte, errc chan error, wg *sync.WaitGroup) {
+	defer wg.Done()
 
 	cipherBlock, err := aes.NewCipher(seed)
 	if err != nil {
@@ -87,5 +88,4 @@ func (c *CompositeKey) transformKeyRaw(key []byte, seed []byte, rounds uint64, r
 
 	*result = dst
 	errc <- nil
-	wg.Done()
 }
