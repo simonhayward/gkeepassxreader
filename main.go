@@ -100,7 +100,7 @@ func OpenDatabase(i input.Provider) (*format.KeePass2Reader, error) {
 
 func databaseKey(i input.Provider) *keys.CompositeKey {
 
-	var masterKey keys.CompositeKey
+	masterKey := keys.NewCompositeKey()
 
 	if len(*i.GetPassword()) > 0 {
 		pk := &keys.PasswordKey{}
@@ -117,5 +117,5 @@ func databaseKey(i input.Provider) *keys.CompositeKey {
 		masterKey.AddKey(kf)
 	}
 
-	return &masterKey
+	return masterKey
 }

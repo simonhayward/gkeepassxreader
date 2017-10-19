@@ -9,9 +9,28 @@ import (
 	"github.com/simonhayward/gkeepassxreader/cryptos"
 )
 
+const (
+	//TransformSeedSize length
+	TransformSeedSize = 32
+)
+
+//Encrypt to transform key
+type Encrypt interface {
+	Encode(key []byte, seed []byte, rounds uint64, result *[]byte) error
+}
+type aesEcbEncrypter struct{}
+
 //CompositeKey holds keys
 type CompositeKey struct {
-	keys []Key
+	keys      []Key
+	Encrypter Encrypt
+}
+
+//NewCompositeKey defaults
+func NewCompositeKey() *CompositeKey {
+	return &CompositeKey{
+		Encrypter: &aesEcbEncrypter{},
+	}
 }
 
 //AddKey appends Key to slice
@@ -19,14 +38,14 @@ func (c *CompositeKey) AddKey(k Key) {
 	c.keys = append(c.keys, k)
 }
 
-//Transform the composite key returns the checksum of data
+//Transform the composite key by performing encryption and returning a checksum
 func (c *CompositeKey) Transform(seed []byte, rounds uint64) ([]byte, error) {
-	if len(seed) != 32 {
-		return nil, fmt.Errorf("seed size error, expected: %d received: %d", 32, len(seed))
+	if len(seed) != TransformSeedSize {
+		return []byte{}, fmt.Errorf("seed size error, expected: %d received: %d", TransformSeedSize, len(seed))
 	}
 
-	if rounds <= uint64(0) {
-		return nil, fmt.Errorf("rounds error, expected greater than: %d", rounds)
+	if rounds == uint64(0) {
+		return []byte{}, fmt.Errorf("rounds error, expected greater than zero")
 	}
 
 	var resultLeft, resultRight []byte
@@ -36,8 +55,8 @@ func (c *CompositeKey) Transform(seed []byte, rounds uint64) ([]byte, error) {
 	splitKey := len(c.RawKey()) / 2
 
 	wg.Add(2)
-	go c.transformKeyRaw(c.RawKey()[:splitKey], seed, rounds, &resultLeft, errc, &wg)
-	go c.transformKeyRaw(c.RawKey()[splitKey:], seed, rounds, &resultRight, errc, &wg)
+	go c.Encrypt(c.RawKey()[:splitKey], seed, rounds, &resultLeft, errc, &wg)
+	go c.Encrypt(c.RawKey()[splitKey:], seed, rounds, &resultRight, errc, &wg)
 	wg.Wait()
 	close(errc)
 
@@ -56,25 +75,26 @@ func (c *CompositeKey) Transform(seed []byte, rounds uint64) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
+//Encrypt performs the encryption
+func (c *CompositeKey) Encrypt(key []byte, seed []byte, rounds uint64, result *[]byte, errc chan error, wg *sync.WaitGroup) {
+	defer wg.Done()
+	errc <- c.Encrypter.Encode(key, seed, rounds, result)
+}
+
 //RawKey returns the checksum of all keys combined
 func (c *CompositeKey) RawKey() []byte {
 
 	h := sha256.New()
-
 	for _, key := range c.keys {
 		h.Write(key.RawKey())
 	}
-
 	return h.Sum(nil)
 }
 
-func (c *CompositeKey) transformKeyRaw(key []byte, seed []byte, rounds uint64, result *[]byte, errc chan error, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (a *aesEcbEncrypter) Encode(key []byte, seed []byte, rounds uint64, result *[]byte) error {
 	cipherBlock, err := aes.NewCipher(seed)
 	if err != nil {
-		errc <- err
-		return
+		return fmt.Errorf("unable to create cipher block: %s", err)
 	}
 
 	dst := make([]byte, len(key))
@@ -87,5 +107,5 @@ func (c *CompositeKey) transformKeyRaw(key []byte, seed []byte, rounds uint64, r
 	}
 
 	*result = dst
-	errc <- nil
+	return nil
 }

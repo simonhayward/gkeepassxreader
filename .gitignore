@@ -1,4 +1,5 @@
 .idea
+*.coverprofile
 *.iml
-vendor/
+vendor/**
 gkeepassxreader

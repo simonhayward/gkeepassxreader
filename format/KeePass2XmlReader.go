@@ -199,11 +199,13 @@ func searchTitles(searchTerm string, titles []string) int {
 	go searchExact(searchTerm, titles, s1)
 	go searchLowerCase(searchTerm, titles, s2)
 
+	// priority
 	i := <-s1
 	if i < l {
 		return i
 	}
 
+	// less priority
 	i = <-s2
 	if i < l {
 		return i
