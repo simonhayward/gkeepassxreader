@@ -1,26 +1,26 @@
 package keys_test
 
 import (
-	"bytes"
 	"encoding/hex"
-	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"github.com/simonhayward/gkeepassxreader/keys"
 )
 
-func TestSetPassword(t *testing.T) {
+var _ = Describe("PasswordKey", func() {
 
-	password := "my secret password"
-	passwordHexDec := "528eb8404a697e419a740ec1d02908739efce4a04f05a7b90d9f877131d13a44"
-	pk := &keys.PasswordKey{}
-	pk.SetPassword(password)
-	expected, err := hex.DecodeString(passwordHexDec)
+	It("sets the expected value", func() {
 
-	if err != nil {
-		t.Errorf("decode failed: %s", err)
-	}
+		password := "my secret password"
+		passwordHexDec := "528eb8404a697e419a740ec1d02908739efce4a04f05a7b90d9f877131d13a44"
+		pk := &keys.PasswordKey{}
+		pk.SetPassword(password)
+		expected, err := hex.DecodeString(passwordHexDec)
 
-	if !bytes.Equal(pk.RawKey(), expected) {
-		t.Errorf("password unequal, expected: %x received: %x", expected, pk.RawKey())
-	}
-}
+		Expect(err).ToNot(HaveOccurred())
+		Expect(pk.RawKey()).To(Equal(expected), "password is expected to be equal")
+	})
+
+})

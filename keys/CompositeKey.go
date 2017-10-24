@@ -1,7 +1,6 @@
 package keys
 
 import (
-	"crypto/aes"
 	"crypto/sha256"
 	"fmt"
 	"sync"
@@ -14,22 +13,16 @@ const (
 	TransformSeedSize = 32
 )
 
-//Encrypt to transform key
-type Encrypt interface {
-	Encode(key []byte, seed []byte, rounds uint64, result *[]byte) error
-}
-type aesEcbEncrypter struct{}
-
 //CompositeKey holds keys
 type CompositeKey struct {
 	keys      []Key
-	Encrypter Encrypt
+	Encrypter cryptos.Encrypt
 }
 
 //NewCompositeKey defaults
 func NewCompositeKey() *CompositeKey {
 	return &CompositeKey{
-		Encrypter: &aesEcbEncrypter{},
+		Encrypter: &cryptos.AesEcbEncrypter{},
 	}
 }
 
@@ -89,23 +82,4 @@ func (c *CompositeKey) RawKey() []byte {
 		h.Write(key.RawKey())
 	}
 	return h.Sum(nil)
-}
-
-func (a *aesEcbEncrypter) Encode(key []byte, seed []byte, rounds uint64, result *[]byte) error {
-	cipherBlock, err := aes.NewCipher(seed)
-	if err != nil {
-		return fmt.Errorf("unable to create cipher block: %s", err)
-	}
-
-	dst := make([]byte, len(key))
-	copy(dst, key)
-
-	encrypter := cryptos.NewECBEncrypter(cipherBlock)
-
-	for i := uint64(0); i < rounds; i++ {
-		encrypter.CryptBlocks(dst, dst)
-	}
-
-	*result = dst
-	return nil
 }

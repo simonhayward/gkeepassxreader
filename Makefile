@@ -13,7 +13,7 @@ build:
 	go build -o $(BINARY_PATH)
 
 test:
-	go test $(PACKAGES) -v
+	ginkgo -race -cover --progress $(PACKAGES)
 
 rebuild:
 	go build -v -race -a -o $(BINARY_PATH)
