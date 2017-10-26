@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"sort"
 	"strings"
 )
 
@@ -83,31 +82,16 @@ func NewKeePass2XmlReader(xmlDevice io.Reader, key *[32]byte) (*KeePass2XmlReade
 	}, nil
 }
 
-// Entry representation
-type Entry struct {
-	Title             string
-	Password          string
-	PlainTextPassword string
-	Protected         bool
-	UUID              string
-	RandomOffset      int
-	CipherText        []byte
+//HeaderHash return hashed header
+func (k *KeePass2XmlReader) HeaderHash() ([]byte, error) {
+
+	data, err := base64.StdEncoding.DecodeString(k.KeePass2XmlFile.Meta.HeaderHash)
+	if err != nil {
+		return nil, fmt.Errorf("base64 decode error: %s", err)
+	}
+
+	return data, nil
 }
-
-//Entries contains entries
-type Entries []Entry
-
-//Len length of entries
-func (e Entries) Len() int { return len(e) }
-
-//Swap entries
-func (e Entries) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
-
-//ByTitle for searching
-type ByTitle struct{ Entries }
-
-//Less for comparisons
-func (e ByTitle) Less(i, j int) bool { return e.Entries[i].Title < e.Entries[j].Title }
 
 func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, randomBytesOffset *int) error {
 	for _, entry := range rEntries {
@@ -146,7 +130,8 @@ func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, rand
 	return nil
 }
 
-func (k *KeePass2XmlReader) readGroups(entries *[]Entry, groups []group, randomBytesOffset *int) error {
+//ReadGroups iterates over database groups
+func (k *KeePass2XmlReader) ReadGroups(entries *[]Entry, groups []group, randomBytesOffset *int) error {
 	for _, group := range groups {
 		if len(group.Entry) > 0 {
 			if err := k.readEntries(entries, group.Entry, randomBytesOffset); err != nil {
@@ -155,7 +140,7 @@ func (k *KeePass2XmlReader) readGroups(entries *[]Entry, groups []group, randomB
 		}
 
 		if len(group.Groups) > 0 {
-			if err := k.readGroups(entries, group.Groups, randomBytesOffset); err != nil {
+			if err := k.ReadGroups(entries, group.Groups, randomBytesOffset); err != nil {
 				return err
 			}
 		}
@@ -163,50 +148,21 @@ func (k *KeePass2XmlReader) readGroups(entries *[]Entry, groups []group, randomB
 	return nil
 }
 
-//Search reader
-func (k *KeePass2XmlReader) Search(searchTerm string) (*Entry, error) {
-
-	entries := []Entry{}
-	randomBytesOffset := 0
-	if err := k.readGroups(&entries, k.KeePass2XmlFile.Root.Groups, &randomBytesOffset); err != nil {
-		return nil, fmt.Errorf("unable to read groups: %s", err)
-	}
-
-	sort.Sort(ByTitle{entries})
-
-	var titles []string
-	for _, e := range entries {
-		titles = append(titles, e.Title)
-	}
-
-	idx := searchTitles(searchTerm, titles)
-	if idx < len(titles) {
-		plaintext, err := k.KeePass2RandomStream.Process(entries[idx].RandomOffset, []byte(entries[idx].CipherText))
-		if err != nil {
-			return nil, fmt.Errorf("unable to decode password: %s", err)
-		}
-		entries[idx].PlainTextPassword = string(plaintext)
-		return &entries[idx], nil
-	}
-
-	return nil, nil
-}
-
 func searchTitles(searchTerm string, titles []string) int {
-	s1, s2 := make(chan int, 1), make(chan int, 1)
+	p1, p2 := make(chan int, 1), make(chan int, 1)
 	l := len(titles)
 
-	go searchExact(searchTerm, titles, s1)
-	go searchLowerCase(searchTerm, titles, s2)
+	go searchExact(searchTerm, titles, p1)
+	go searchLowerCase(searchTerm, titles, p2)
 
-	// priority
-	i := <-s1
+	// priority #1
+	i := <-p1
 	if i < l {
 		return i
 	}
 
-	// less priority
-	i = <-s2
+	// priority #2
+	i = <-p2
 	if i < l {
 		return i
 	}
@@ -237,15 +193,4 @@ func searchLowerCase(searchTerm string, terms []string, c chan int) {
 		}
 	}
 	c <- len(terms)
-}
-
-//HeaderHash return hashed header
-func (k *KeePass2XmlReader) HeaderHash() ([]byte, error) {
-
-	data, err := base64.StdEncoding.DecodeString(k.KeePass2XmlFile.Meta.HeaderHash)
-	if err != nil {
-		return nil, fmt.Errorf("base64 decode error: %s", err)
-	}
-
-	return data, nil
 }

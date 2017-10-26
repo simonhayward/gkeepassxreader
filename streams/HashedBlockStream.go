@@ -6,8 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // HashedBlock represents a hashed block
@@ -22,19 +20,14 @@ type HashedBlock struct {
 
 //NewHashedBlock create new hashed block
 func NewHashedBlock(mode cipher.BlockMode, stream *SymmetricCipherStream) *HashedBlock {
-
-	h := HashedBlock{
+	return &HashedBlock{
 		mode:         mode,
 		cipherStream: stream,
 	}
-
-	return &h
 }
 
 // ReadData in hashed blocks
 func (hb *HashedBlock) ReadData(data *[]byte, maxSize int) (int, error) {
-
-	log.Debugf("[HashedBlockStream::readData] maxSize: %d", maxSize)
 
 	bytesRemaining := maxSize
 	var offset, bytesToCopy int
@@ -58,8 +51,6 @@ func (hb *HashedBlock) ReadData(data *[]byte, maxSize int) (int, error) {
 		if bytesRemaining < bytesToCopy {
 			bytesToCopy = bytesRemaining
 		}
-
-		log.Debugf("[HashedBlockStream::readData] bytesToCopy: %d", bytesToCopy)
 
 		if len(*data) < offset+bytesToCopy {
 			newSlice := make([]byte, offset+bytesToCopy)
@@ -85,21 +76,17 @@ func (hb *HashedBlock) readHashedBlock() (bool, error) {
 		return false, fmt.Errorf("unable to read block index: %s", err)
 	}
 
-	log.Debugf("[HashedBlockStream::readHashedBlock] readUInt32 4 bytes")
-
 	var index uint32
 	bufIndex := bytes.NewReader(indexBytes)
 	if err := binary.Read(bufIndex, binary.LittleEndian, &index); err != nil {
 		return false, fmt.Errorf("index read failed: %s", err)
 	}
-	log.Debugf("[HashedBlockStream::readHashedBlock] readUInt32 index: %d -> %d", index, hb.blockIndex)
 
 	if index != hb.blockIndex {
 		return false, fmt.Errorf("invalid block index: %d -> %d", index, hb.blockIndex)
 	}
 
 	hash := make([]byte, 32)
-	log.Debugf("[HashedBlockStream::readHashedBlock] 32 bytes")
 	_, err = hb.cipherStream.ReadData(&hash, 32)
 
 	if err != nil {
@@ -111,7 +98,6 @@ func (hb *HashedBlock) readHashedBlock() (bool, error) {
 	}
 
 	blockSizeBytes := make([]byte, 4)
-	log.Debugf("[HashedBlockStream::readHashedBlock] readUInt32 4 bytes")
 	_, err = hb.cipherStream.ReadData(&blockSizeBytes, 4)
 
 	if err != nil {
@@ -138,14 +124,11 @@ func (hb *HashedBlock) readHashedBlock() (bool, error) {
 		return false, nil
 	}
 
-	log.Debugf("[HashedBlockStream::readHashedBlock] %d bytes", blockSize)
 	_, err = hb.cipherStream.ReadData(&hb.buffer, int(blockSize))
 
 	if err != nil {
 		return false, fmt.Errorf("unable to buffer: %s", err)
 	}
-
-	log.Debugf("trying to decrypt buffer: %d", len(hb.buffer))
 
 	if len(hb.buffer) != int(blockSize) {
 		return false, fmt.Errorf("block too short")

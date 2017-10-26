@@ -54,6 +54,9 @@ Run
 Testing
 -------
 
+[Ginkgo][4]is used to run the tests
+
+
 ```bash
 make test
 ```
@@ -62,3 +65,4 @@ make test
 [1]: https://www.keepassx.org/
 [2]: https://golang.org/
 [3]: https://github.com/Masterminds/glide
+[4]: http://onsi.github.io/ginkgo/
