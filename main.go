@@ -67,7 +67,7 @@ func main() {
 		if len(*chrs) > 0 {
 			output.Extract(entry, *chrs)
 		}
-		fmt.Printf("Found\nTitle: %s\n", entry.Title)
+		fmt.Printf("Found\nUUID: %s\nTitle: %s\n", entry.UUID, entry.Title)
 		if *clipboard {
 			cp := output.GetClipboard()
 			if cp == nil {

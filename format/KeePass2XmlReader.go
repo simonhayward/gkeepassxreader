@@ -2,11 +2,11 @@ package format
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"strings"
 )
 
 var (
@@ -109,8 +109,13 @@ func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, rand
 			return fmt.Errorf("ciphertext decode err: %s", err)
 		}
 
+		uuid, err := base64.StdEncoding.DecodeString(entry.UUID)
+		if err != nil {
+			return fmt.Errorf("base64 decode for uuid failed: %s", err)
+		}
+
 		e := Entry{
-			UUID:         entry.UUID,
+			UUID:         hex.EncodeToString(uuid),
 			Title:        title,
 			Password:     password,
 			CipherText:   cipherText,
@@ -146,51 +151,4 @@ func (k *KeePass2XmlReader) ReadGroups(entries *[]Entry, groups []group, randomB
 		}
 	}
 	return nil
-}
-
-func searchTitles(searchTerm string, titles []string) int {
-	p1, p2 := make(chan int, 1), make(chan int, 1)
-	l := len(titles)
-
-	go searchExact(searchTerm, titles, p1)
-	go searchLowerCase(searchTerm, titles, p2)
-
-	// priority #1
-	i := <-p1
-	if i < l {
-		return i
-	}
-
-	// priority #2
-	i = <-p2
-	if i < l {
-		return i
-	}
-
-	return l
-}
-
-func searchExact(searchTerm string, terms []string, c chan int) {
-	defer close(c)
-
-	for i, v := range terms {
-		if searchTerm == v {
-			c <- i
-			break
-		}
-	}
-	c <- len(terms)
-}
-
-func searchLowerCase(searchTerm string, terms []string, c chan int) {
-	defer close(c)
-
-	searchTerm = strings.ToLower(searchTerm)
-	for i, v := range terms {
-		if searchTerm == strings.ToLower(v) {
-			c <- i
-			break
-		}
-	}
-	c <- len(terms)
 }

@@ -2,6 +2,7 @@ package keys_test
 
 import (
 	"crypto/sha256"
+	"fmt"
 
 	"github.com/simonhayward/gkeepassxreader/keys/keysfakes"
 
@@ -62,6 +63,33 @@ var _ = Describe("CompositeKey", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(Equal([]byte{}))
 				Expect(fakeEncrypt.EncodeCallCount()).To(Equal(0), "Encryption should NOT be called")
+			})
+		})
+
+		Context("when the first encryption call returns an error", func() {
+			It("should return an empty slice and an error", func() {
+
+				fakeEncrypt.EncodeReturnsOnCall(0, fmt.Errorf("Boom"))
+				fakeEncrypt.EncodeReturnsOnCall(1, nil)
+				compositeKey.Encrypter = fakeEncrypt
+				out, err := compositeKey.Transform(regSeed, defaultRounds)
+
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(Equal([]byte{}))
+				Expect(fakeEncrypt.EncodeCallCount()).To(Equal(2), "Encryption should be called twice")
+			})
+		})
+		Context("when the second encryption call returns an error", func() {
+			It("should return an empty slice and an error", func() {
+
+				fakeEncrypt.EncodeReturnsOnCall(0, nil)
+				fakeEncrypt.EncodeReturnsOnCall(1, fmt.Errorf("Boom"))
+				compositeKey.Encrypter = fakeEncrypt
+				out, err := compositeKey.Transform(regSeed, defaultRounds)
+
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(Equal([]byte{}))
+				Expect(fakeEncrypt.EncodeCallCount()).To(Equal(2), "Encryption should be called twice")
 			})
 		})
 	})

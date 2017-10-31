@@ -13,20 +13,20 @@ const (
 	TransformSeedSize = 32
 )
 
-//CompositeKey holds keys
+//CompositeKey holds key combinations and encypter to apply
 type CompositeKey struct {
 	keys      []Key
 	Encrypter cryptos.Encrypt
 }
 
-//NewCompositeKey defaults
+//NewCompositeKey defaults to AES/ECB encryption
 func NewCompositeKey() *CompositeKey {
 	return &CompositeKey{
 		Encrypter: &cryptos.AesEcbEncrypter{},
 	}
 }
 
-//AddKey appends Key to slice
+//AddKey appends Key to slice of keys
 func (c *CompositeKey) AddKey(k Key) {
 	c.keys = append(c.keys, k)
 }
@@ -55,7 +55,7 @@ func (c *CompositeKey) Transform(seed []byte, rounds uint64) ([]byte, error) {
 
 	for e := range errc {
 		if e != nil {
-			return nil, e
+			return []byte{}, e
 		}
 	}
 
