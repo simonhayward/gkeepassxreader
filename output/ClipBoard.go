@@ -6,6 +6,10 @@ import (
 	"runtime"
 )
 
+type ClipBoard interface {
+	CopyProcess(string) error
+}
+
 type execCommand struct{}
 
 func (ec *execCommand) Process(cmds []string, text string) error {
@@ -34,11 +38,6 @@ func (ec *execCommand) Process(cmds []string, text string) error {
 	return nil
 }
 
-// ClipBoard interface
-type ClipBoard interface {
-	CopyProcess(string) error
-}
-
 type oSXClipBoard struct {
 	execCommand
 }
@@ -55,7 +54,6 @@ func (osxC *oSXClipBoard) CopyProcess(text string) error {
 
 func (osxC *linuxClipBoard) CopyProcess(text string) error {
 	return osxC.Process([]string{"xclip", "-selection", "clipboard"}, text)
-
 }
 
 func (osxC *windowsClipBoard) CopyProcess(text string) error {

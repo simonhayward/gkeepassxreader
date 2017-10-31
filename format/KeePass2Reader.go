@@ -10,8 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/simonhayward/gkeepassxreader/core"
 	"github.com/simonhayward/gkeepassxreader/keys"
@@ -49,12 +47,9 @@ const (
 
 //KeePass2Reader represents a KeePass2Reader
 type KeePass2Reader struct {
-	db *core.Database
-	//m_device
-	error              bool
-	errorStr           string
+	db                 *core.Database
 	headerEnd          bool
-	XmlReader          *KeePass2XmlReader
+	XMLReader          *KeePass2XmlReader
 	masterSeed         []byte
 	transformSeed      []byte
 	encryptionIV       []byte
@@ -65,13 +60,20 @@ type KeePass2Reader struct {
 
 //NewKeePass2Reader with default values
 func NewKeePass2Reader() *KeePass2Reader {
-	db := core.NewDatabase()
-
 	return &KeePass2Reader{
-		db:        db,
-		error:     false,
-		headerEnd: false,
+		db: core.NewDatabase(),
 	}
+}
+
+// OpenDatabase with key
+func OpenDatabase(masterKey *keys.CompositeKey, dbFile *os.File) (*KeePass2Reader, error) {
+	k := NewKeePass2Reader()
+	err := k.ReadDatabase(dbFile, masterKey)
+	if err != nil {
+		return nil, fmt.Errorf("read database error: %s", err.Error())
+	}
+
+	return k, nil
 }
 
 //ReadDatabase reads the input database
@@ -106,7 +108,7 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 
 	h := sha256.New()
 	h.Write(k.masterSeed)
-	h.Write(k.db.Data.TransformedMasterKey)
+	h.Write(k.db.TransformedMasterKey)
 	finalKey := h.Sum(nil)
 
 	block, err := aes.NewCipher(finalKey)
@@ -131,13 +133,21 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 	*/
 	hashBlock := streams.NewHashedBlock(cipherStream.BlockMode, cipherStream)
 	var result []byte
-	_, err = hashBlock.ReadData(&result, 65500)
-	if err != nil {
-		return err
+	var bytesRead int
+	byteChunks := 65500
+
+	for {
+		bytesRead, err = hashBlock.ReadData(&result, byteChunks)
+		if err != nil {
+			return err
+		}
+		if bytesRead == 0 {
+			break
+		}
 	}
 
 	var xmlDevice io.Reader
-	if k.db.Data.CompressionAlgo == core.CompressionNone {
+	if k.db.CompressionAlgo == core.CompressionNone {
 		log.Debugf("no compression set")
 		xmlDevice = bytes.NewReader(result)
 	} else {
@@ -158,16 +168,13 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 		xmlDevice = bytes.NewReader(b)
 	}
 
-	/*
-		Random stream
-	*/
 	randomKey := sha256.Sum256(k.protectedStreamKey)
-	k.XmlReader, err = NewKeePass2XmlReader(xmlDevice, &randomKey)
+	k.XMLReader, err = NewKeePass2XmlReader(xmlDevice, &randomKey)
 	if err != nil {
 		return fmt.Errorf("cannot create new keepass2xml reader: %s", err)
 	}
 
-	xmlHeaderHash, err := k.XmlReader.HeaderHash()
+	xmlHeaderHash, err := k.XMLReader.HeaderHash()
 	if err != nil {
 		return fmt.Errorf("xml header hash error: %s", err)
 	}
@@ -185,30 +192,6 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 	}
 
 	return nil
-}
-
-// SearchDatabase search database for search term
-func (k *KeePass2Reader) SearchDatabase(search string, chrs string) (*Entry, error) {
-	entry, err := k.XmlReader.Search(search)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(chrs) > 0 {
-		var buffer bytes.Buffer
-		idxs := strings.Split(chrs, ",")
-		for _, strIdx := range idxs {
-			idx, err := strconv.Atoi(strIdx)
-			if err != nil {
-				return nil, err
-			}
-			idx--
-			buffer.WriteByte(entry.PlainTextPassword[idx])
-		}
-		entry.PlainTextPassword = buffer.String()
-	}
-
-	return entry, nil
 }
 
 //CheckSignature inspects to see if this is a valid keepass database
@@ -294,7 +277,7 @@ func (k *KeePass2Reader) CheckVersion(db *os.File) error {
 func (k *KeePass2Reader) CheckHeaders() error {
 	if len(k.masterSeed) == 0 || len(k.transformSeed) == 0 || len(k.encryptionIV) == 0 ||
 		len(k.streamStartBytes) == 0 || len(k.protectedStreamKey) == 0 ||
-		len(k.db.Data.Cipher.Data) == 0 {
+		len(k.db.Cipher.Data) == 0 {
 		return fmt.Errorf("missing database headers")
 	}
 	return nil
@@ -414,7 +397,7 @@ func (k *KeePass2Reader) setCipher(b []byte) error {
 		return fmt.Errorf("unsupported cipher")
 	}
 
-	k.db.Data.Cipher = cipher
+	k.db.Cipher = cipher
 
 	return nil
 }
@@ -434,7 +417,7 @@ func (k *KeePass2Reader) setCompressionFlags(b []byte) error {
 		return fmt.Errorf("unsupported compression algorithm")
 	}
 
-	k.db.Data.CompressionAlgo = id
+	k.db.CompressionAlgo = id
 	return nil
 }
 
@@ -467,9 +450,9 @@ func (k *KeePass2Reader) setTransformRounds(b []byte) error {
 		return fmt.Errorf("binary.Read failed: %s", err)
 	}
 
-	if k.db.Data.TransformRounds != rounds {
-		log.Debugf("updating transform rounds from: %d to: %d", k.db.Data.TransformRounds, rounds)
-		k.db.Data.TransformRounds = rounds
+	if k.db.TransformRounds != rounds {
+		log.Debugf("updating transform rounds from: %d to: %d", k.db.TransformRounds, rounds)
+		k.db.TransformRounds = rounds
 	}
 
 	return nil

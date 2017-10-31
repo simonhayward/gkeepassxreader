@@ -14,8 +14,10 @@ import (
 
 const (
 	xmlMetaVersion = "1.00"
-	hexSize        = 64
-	keySize        = 32
+	//HexSize length
+	HexSize = 64
+	//KeySize length
+	KeySize = 32
 )
 
 type xmlMeta struct {
@@ -162,7 +164,7 @@ func (fk *FileKey) loadBinary(f *os.File) bool {
 		log.Errorf("binary read failed: %s", err)
 		return false
 	}
-	if len(b) != keySize {
+	if len(b) != KeySize {
 		return false
 	}
 
@@ -176,18 +178,18 @@ func (fk *FileKey) loadHex(f *os.File) bool {
 		log.Errorf("binary read failed: %s", err)
 		return false
 	}
-	if len(b) != hexSize {
+	if len(b) != HexSize {
 		return false
 	}
 
-	dst := make([]byte, keySize)
+	dst := make([]byte, KeySize)
 	n, err := hex.Decode(dst, b)
 	if err != nil {
 		log.Errorf("hex decode failed: %s", err)
 		return false
 	}
 
-	if n != keySize {
+	if n != KeySize {
 		return false
 	}
 

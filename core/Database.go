@@ -29,20 +29,14 @@ var (
 	Keepass2CipherAes = []byte{49, 193, 242, 230, 191, 113, 67, 80, 190, 88, 5, 33, 106, 252, 90, 255}
 )
 
-//DatabaseData is data
-type DatabaseData struct {
+//Database represents the database meta info
+type Database struct {
 	Cipher               UUID
 	CompressionAlgo      uint32
 	TransformSeed        []byte
 	TransformRounds      uint64
 	TransformedMasterKey []byte
 	Key                  *keys.CompositeKey
-	HasKey               bool
-}
-
-// Database is database
-type Database struct {
-	Data DatabaseData
 }
 
 // NewDatabase with default values
@@ -50,30 +44,26 @@ func NewDatabase() *Database {
 	u := UUID{Data: Keepass2CipherAes}
 
 	return &Database{
-		Data: DatabaseData{
-			Cipher:          u,
-			CompressionAlgo: CompressionGzip,
-			TransformRounds: defaultTransformRounds,
-			HasKey:          false,
-		},
+		Cipher:          u,
+		CompressionAlgo: CompressionGzip,
+		TransformRounds: defaultTransformRounds,
 	}
 }
 
-//SetKey sets up key
+//SetKey sets up key transformation
 func (d *Database) SetKey(key *keys.CompositeKey, transformSeed []byte, updateChangedTime bool) error {
 
 	var transformedMasterKey []byte
 
-	transformedMasterKey, err := key.Transform(transformSeed, d.Data.TransformRounds)
+	transformedMasterKey, err := key.Transform(transformSeed, d.TransformRounds)
 
 	if err != nil {
 		return err
 	}
 
-	d.Data.Key = key
-	d.Data.TransformSeed = transformSeed
-	d.Data.TransformedMasterKey = transformedMasterKey
-	d.Data.HasKey = true
+	d.Key = key
+	d.TransformSeed = transformSeed
+	d.TransformedMasterKey = transformedMasterKey
 
 	return nil
 }
