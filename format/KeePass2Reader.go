@@ -102,7 +102,7 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 		return fmt.Errorf("Header check failed %s", err)
 	}
 
-	if err := k.db.SetKey(compositeKey, k.transformSeed, false); err != nil {
+	if err := k.db.SetKey(compositeKey, k.transformSeed); err != nil {
 		return fmt.Errorf("Unable to calculate master key %s", err)
 	}
 

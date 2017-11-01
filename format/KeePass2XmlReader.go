@@ -95,12 +95,19 @@ func (k *KeePass2XmlReader) HeaderHash() ([]byte, error) {
 
 func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, randomBytesOffset *int) error {
 	for _, entry := range rEntries {
-		var title, password string
+		var title, password, username, url, notes string
 		for _, sEntry := range entry.StringEntry {
-			if sEntry.Key == "Title" {
+			switch sEntry.Key {
+			case "Title":
 				title = sEntry.Value
-			} else if sEntry.Key == "Password" {
+			case "Password":
 				password = sEntry.Value
+			case "Username":
+				username = sEntry.Value
+			case "URL":
+				url = sEntry.Value
+			case "Notes":
+				notes = sEntry.Value
 			}
 		}
 
@@ -118,6 +125,9 @@ func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, rand
 			UUID:         hex.EncodeToString(uuid),
 			Title:        title,
 			Password:     password,
+			Username:     username,
+			URL:          url,
+			Notes:        notes,
 			CipherText:   cipherText,
 			RandomOffset: *randomBytesOffset,
 		}

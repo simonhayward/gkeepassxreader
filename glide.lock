@@ -1,5 +1,5 @@
-hash: 2ee724c98a66205a09c644c21d0fa9de66f964ffd7616082d250b24c4af8249b
-updated: 2017-10-19T21:14:36.524502672+01:00
+hash: a7ea838cd355bc285344657d6df58992bff228789888cb2b6f4f6a2e39825889
+updated: 2017-11-01T21:44:56.317555572Z
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -7,6 +7,10 @@ imports:
   - parse
 - name: github.com/alecthomas/units
   version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
+- name: github.com/mattn/go-runewidth
+  version: 9e777a8366cce605130a531d2cd6363d07ad7317
+- name: github.com/olekukonko/tablewriter
+  version: a7a4c189eb47ed33ce7b35f2880070a0c82a67d4
 - name: github.com/onsi/ginkgo
   version: 9eda700730cba42af70d53180f9dcce9266bc2bc
   subpackages:

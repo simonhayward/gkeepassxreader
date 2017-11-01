@@ -51,7 +51,7 @@ func NewDatabase() *Database {
 }
 
 //SetKey sets up key transformation
-func (d *Database) SetKey(key *keys.CompositeKey, transformSeed []byte, updateChangedTime bool) error {
+func (d *Database) SetKey(key *keys.CompositeKey, transformSeed []byte) error {
 
 	var transformedMasterKey []byte
 

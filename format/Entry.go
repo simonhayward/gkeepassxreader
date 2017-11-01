@@ -3,10 +3,13 @@ package format
 // Entry representation
 type Entry struct {
 	Title             string
+	Username          string
 	Password          string
+	PasswordProtected bool
 	PlainTextPassword string
-	Protected         bool
 	UUID              string
+	URL               string
+	Notes             string
 	RandomOffset      int
 	CipherText        []byte
 }
