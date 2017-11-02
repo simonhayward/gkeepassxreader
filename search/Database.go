@@ -2,7 +2,6 @@ package search
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/simonhayward/gkeepassxreader/format"
@@ -23,15 +22,8 @@ func Database(xmlReader *format.KeePass2XmlReader, searchTerm string) (*format.E
 		return nil, fmt.Errorf("unable to read groups: %s", err)
 	}
 
-	sort.Sort(ByTitle{entries})
-
-	var titles []string
-	for _, e := range entries {
-		titles = append(titles, e.Title)
-	}
-
-	idx := searchTitles(searchTerm, titles)
-	if idx < len(titles) {
+	idx := search(searchTerm, entries)
+	if idx < len(entries) {
 		plaintext, err := xmlReader.KeePass2RandomStream.Process(entries[idx].RandomOffset, []byte(entries[idx].CipherText))
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode password: %s", err)
@@ -43,12 +35,19 @@ func Database(xmlReader *format.KeePass2XmlReader, searchTerm string) (*format.E
 	return nil, nil
 }
 
-func searchTitles(searchTerm string, titles []string) int {
-	p1, p2 := make(chan int, 1), make(chan int, 1)
-	l := len(titles)
+func search(searchTerm string, entries []format.Entry) int {
+	var titles, uuids []string
+	for _, e := range entries {
+		titles = append(titles, e.Title)
+		uuids = append(uuids, e.UUID)
+	}
 
-	go searchExact(searchTerm, titles, p1)
-	go searchLowerCase(searchTerm, titles, p2)
+	p1, p2, p3 := make(chan int, 1), make(chan int, 1), make(chan int, 1)
+	l := len(entries)
+
+	go searchExact(searchTerm, uuids, p1)
+	go searchExact(searchTerm, titles, p2)
+	go searchLowerCase(searchTerm, titles, p3)
 
 	// priority #1
 	i := <-p1
@@ -58,6 +57,12 @@ func searchTitles(searchTerm string, titles []string) int {
 
 	// priority #2
 	i = <-p2
+	if i < l {
+		return i
+	}
+
+	// priority #3
+	i = <-p3
 	if i < l {
 		return i
 	}
