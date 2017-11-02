@@ -19,12 +19,14 @@ const (
 )
 
 var (
-	db        = kingpin.Flag("db", "Keepassx database").Required().File()
-	term      = kingpin.Flag("term", "Search term").Required().Short('s').String()
-	chrs      = kingpin.Flag("chrs", "Copy characters from password [2,6,7..]").Short('c').String()
-	keyfile   = kingpin.Flag("keyfile", "Key file").Short('k').File()
-	debug     = kingpin.Flag("debug", "Enable debug mode").Short('d').Bool()
-	clipboard = kingpin.Flag("clipboard", "Copy to clipboard").Short('x').Bool()
+	db      = kingpin.Flag("db", "Keepassx database").Required().File()
+	keyfile = kingpin.Flag("keyfile", "Key file").Short('k').File()
+	debug   = kingpin.Flag("debug", "Enable debug mode").Short('d').Bool()
+
+	cmdSearch       = kingpin.Command("search", "Search for an entry")
+	searchTerm      = cmdSearch.Arg("term", "Search by title or UUID").Required().String()
+	searchChrs      = cmdSearch.Flag("chrs", "Copy selected characters from password [2,6,7..]").Short('c').String()
+	searchClipboard = cmdSearch.Flag("clipboard", "Copy to clipboard").Short('x').Bool()
 )
 
 func main() {
@@ -56,40 +58,43 @@ func main() {
 		log.Fatalf("open database error: %s", err)
 	}
 
-	entry, err := search.Database(reader.XMLReader, *term)
-	if err != nil {
-		log.Fatalf("search database error: %s", err)
-	}
-
-	if entry == nil {
-		log.Fatalf("Search term: '%s' not found\n", *term)
-	} else {
-		// fields
-		dataHeader := []string{"UUID", "Title", "Username", "URL", "Notes"}
-		dataEntry := []string{entry.UUID, entry.Title, entry.Username, entry.URL, entry.Notes}
-
-		// Extract x characters from password
-		if len(*chrs) > 0 {
-			output.Extract(entry, *chrs)
+	switch kingpin.Parse() {
+	case cmdSearch.FullCommand():
+		entry, err := search.Database(reader.XMLReader, *searchTerm)
+		if err != nil {
+			log.Fatalf("search database error: %s", err)
 		}
 
-		// Copy password to clipboard
-		if *clipboard {
-			cp := output.GetClipboard()
-			if cp == nil {
-				log.Fatalf("unable to identify os to copy to clipboard")
-			}
-
-			if err := cp.CopyProcess(entry.PlainTextPassword); err != nil {
-				log.Fatalf("unable to copy password to clipboard: %s", err)
-			}
-
-			fmt.Println("password copied to clipboard")
+		if entry == nil {
+			log.Fatalf("Search term: '%s' not found\n", *searchTerm)
 		} else {
-			dataEntry = append(dataEntry, entry.PlainTextPassword)
-			dataHeader = append(dataHeader, "Password")
-		}
+			// fields
+			dataHeader := []string{"UUID", "Title", "Username", "URL", "Notes"}
+			dataEntry := []string{entry.UUID, entry.Title, entry.Username, entry.URL, entry.Notes}
 
-		output.Table(dataHeader, [][]string{dataEntry})
+			// Extract x characters from password
+			if len(*searchChrs) > 0 {
+				output.Extract(entry, *searchChrs)
+			}
+
+			// Copy password to clipboard
+			if *searchClipboard {
+				cp := output.GetClipboard()
+				if cp == nil {
+					log.Fatalf("unable to identify os to copy to clipboard")
+				}
+
+				if err := cp.CopyProcess(entry.PlainTextPassword); err != nil {
+					log.Fatalf("unable to copy password to clipboard: %s", err)
+				}
+
+				fmt.Println("password copied to clipboard")
+			} else {
+				dataEntry = append(dataEntry, entry.PlainTextPassword)
+				dataHeader = append(dataHeader, "Password")
+			}
+
+			output.Table(dataHeader, [][]string{dataEntry})
+		}
 	}
 }

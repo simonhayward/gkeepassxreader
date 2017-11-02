@@ -1,7 +1,7 @@
 GKeepassXReader
 ===============
 
-A simple command line interface for [KeePassX][1]database files. 
+A simple command line interface for [KeePassX][1]database files written in [Go][2]. 
 GKeepassXReader currently supports the KeePass 2 (.kdbx) password database format 
 and not the older KeePass 1 (.kdb) databases.
 
@@ -10,17 +10,21 @@ Usage
 -----
 
 ```bash
-usage: gkeepassxreader --db=DB --search=SEARCH [<flags>]
+usage: gkeepassxreader search [<flags>] <term>
+
+Search for an entry
 
 Flags:
       --help             Show context-sensitive help (also try --help-long and --help-man).
       --db=DB            Keepassx database
-  -s, --search=SEARCH    Search for title
-  -c, --chrs=CHRS        Select characters from password [2,6,7..]
   -k, --keyfile=KEYFILE  Key file
   -d, --debug            Enable debug mode
-  -x, --clipboard        Copy to clipboard
       --version          Show application version.
+  -c, --chrs=CHRS        Copy characters from password [2,6,7..]
+  -x, --clipboard        Copy to clipboard
+
+Args:
+  <term>  Search by title or UUID
 
 
 ```
@@ -48,7 +52,14 @@ Run
 ---
 
 ```bash
-./gkeepassxreader --db=database.kdbx --search=entry
+./gkeepassxreader search 'Sample Entry' --db Database.kdbx
+Password (press enter for no password): 
++----------------------------------+--------------+----------+--------------------------+-------+-------------------+
+|               UUID               |    TITLE     | USERNAME |           URL            | NOTES |     PASSWORD      |
++----------------------------------+--------------+----------+--------------------------+-------+-------------------+
+| a8370aa88afd3c4593ce981eafb789c8 | Sample Entry |          | http://www.somesite.com/ | Notes | ProtectedPassword |
++----------------------------------+--------------+----------+--------------------------+-------+-------------------+
+
 ```
 
 Testing
