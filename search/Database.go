@@ -7,12 +7,6 @@ import (
 	"github.com/simonhayward/gkeepassxreader/format"
 )
 
-//ByTitle for searching
-type ByTitle struct{ format.Entries }
-
-//Less for comparisons
-func (e ByTitle) Less(i, j int) bool { return e.Entries[i].Title < e.Entries[j].Title }
-
 // Database searches the xml database for specified search term
 func Database(xmlReader *format.KeePass2XmlReader, searchTerm string) (*format.Entry, error) {
 
