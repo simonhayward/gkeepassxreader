@@ -76,7 +76,7 @@ func searchExact(searchTerm string, terms []string, c chan int) {
 	for i, v := range terms {
 		if searchTerm == v {
 			c <- i
-			break
+			return
 		}
 	}
 	c <- len(terms)
@@ -89,7 +89,7 @@ func searchLowerCase(searchTerm string, terms []string, c chan int) {
 	for i, v := range terms {
 		if searchTerm == strings.ToLower(v) {
 			c <- i
-			break
+			return
 		}
 	}
 	c <- len(terms)
