@@ -137,12 +137,12 @@ func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, entr
 
 		*entries = append(*entries, e)
 
-		// history entries?
-		// if len(entry.HistoryEntries) > 0 {
-		// 	if err := k.readEntries(entries, entry.HistoryEntries, entryGroup, randomBytesOffset); err != nil {
-		// 		return err
-		// 	}
-		// }
+		// history entries are needed for randomBytes offset in random stream
+		if len(entry.HistoryEntries) > 0 {
+			if err := k.readEntries(entries, entry.HistoryEntries, entryGroup, randomBytesOffset); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
