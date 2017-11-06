@@ -68,9 +68,8 @@ func main() {
 		if entry == nil {
 			log.Fatalf("Search term: '%s' not found\n", *searchTerm)
 		} else {
-			// fields
-			dataHeader := []string{"UUID", "Title", "Username", "URL", "Notes"}
-			dataEntry := []string{entry.UUID, entry.Title, entry.Username, entry.URL, entry.Notes}
+			fields := output.NewDefaults()
+			fields.Entries([]*format.Entry{entry})
 
 			// Extract x characters from password
 			if len(*searchChrs) > 0 {
@@ -90,11 +89,11 @@ func main() {
 
 				fmt.Println("password copied to clipboard")
 			} else {
-				dataEntry = append(dataEntry, entry.PlainTextPassword)
-				dataHeader = append(dataHeader, "Password")
+				fields.Data[0] = append(fields.Data[0], entry.PlainTextPassword)
+				fields.Header = append(fields.Header, "Password")
 			}
 
-			output.Table(dataHeader, [][]string{dataEntry})
+			output.Table(fields.Header, fields.Data)
 		}
 	}
 }

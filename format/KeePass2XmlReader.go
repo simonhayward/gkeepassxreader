@@ -93,7 +93,7 @@ func (k *KeePass2XmlReader) HeaderHash() ([]byte, error) {
 	return data, nil
 }
 
-func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, randomBytesOffset *int) error {
+func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, entryGroup group, randomBytesOffset *int) error {
 	for _, entry := range rEntries {
 		var title, password, username, url, notes string
 		for _, sEntry := range entry.StringEntry {
@@ -124,6 +124,7 @@ func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, rand
 		e := Entry{
 			UUID:         hex.EncodeToString(uuid),
 			Title:        title,
+			Group:        entryGroup.Name,
 			Password:     password,
 			Username:     username,
 			URL:          url,
@@ -136,11 +137,12 @@ func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, rand
 
 		*entries = append(*entries, e)
 
-		if len(entry.HistoryEntries) > 0 {
-			if err := k.readEntries(entries, entry.HistoryEntries, randomBytesOffset); err != nil {
-				return err
-			}
-		}
+		// history entries?
+		// if len(entry.HistoryEntries) > 0 {
+		// 	if err := k.readEntries(entries, entry.HistoryEntries, entryGroup, randomBytesOffset); err != nil {
+		// 		return err
+		// 	}
+		// }
 	}
 	return nil
 }
@@ -149,7 +151,7 @@ func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, rand
 func (k *KeePass2XmlReader) ReadGroups(entries *[]Entry, groups []group, randomBytesOffset *int) error {
 	for _, group := range groups {
 		if len(group.Entry) > 0 {
-			if err := k.readEntries(entries, group.Entry, randomBytesOffset); err != nil {
+			if err := k.readEntries(entries, group.Entry, group, randomBytesOffset); err != nil {
 				return err
 			}
 		}
