@@ -1,4 +1,4 @@
-package search
+package entries
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"github.com/simonhayward/gkeepassxreader/format"
 )
 
-// Database searches the xml database for specified search term
-func Database(xmlReader *format.KeePass2XmlReader, searchTerm string) (*format.Entry, error) {
+// SearchByTerm searches the xml database for specified search term
+func SearchByTerm(xmlReader *format.KeePass2XmlReader, searchTerm string) (*format.Entry, error) {
 
 	entries := []format.Entry{}
 	randomBytesOffset := 0

@@ -21,7 +21,7 @@ func NewDefaults() *Data {
 }
 
 //Entries fields to display
-func (d *Data) Entries(entries []*format.Entry) {
+func (d *Data) Entries(entries []format.Entry) {
 	for _, entry := range entries {
 		d.Data = append(d.Data, []string{
 			entry.UUID,

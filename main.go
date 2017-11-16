@@ -5,10 +5,10 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/simonhayward/gkeepassxreader/entries"
 	"github.com/simonhayward/gkeepassxreader/format"
 	"github.com/simonhayward/gkeepassxreader/keys"
 	"github.com/simonhayward/gkeepassxreader/output"
-	"github.com/simonhayward/gkeepassxreader/search"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -27,6 +27,8 @@ var (
 	searchTerm      = cmdSearch.Arg("term", "Search by title or UUID").Required().String()
 	searchChrs      = cmdSearch.Flag("chrs", "Copy selected characters from password [2,6,7..]").Short('c').String()
 	searchClipboard = cmdSearch.Flag("clipboard", "Copy to clipboard").Short('x').Bool()
+
+	cmdList = kingpin.Command("list", "List entries")
 )
 
 func main() {
@@ -60,7 +62,7 @@ func main() {
 
 	switch kingpin.Parse() {
 	case cmdSearch.FullCommand():
-		entry, err := search.Database(reader.XMLReader, *searchTerm)
+		entry, err := entries.SearchByTerm(reader.XMLReader, *searchTerm)
 		if err != nil {
 			log.Fatalf("search database error: %s", err)
 		}
@@ -69,7 +71,7 @@ func main() {
 			log.Fatalf("Search term: '%s' not found\n", *searchTerm)
 		} else {
 			fields := output.NewDefaults()
-			fields.Entries([]*format.Entry{entry})
+			fields.Entries([]format.Entry{*entry})
 
 			// Extract x characters from password
 			if len(*searchChrs) > 0 {
@@ -95,5 +97,14 @@ func main() {
 
 			output.Table(fields.Header, fields.Data)
 		}
+	case cmdList.FullCommand():
+		allEntries, err := entries.List(reader.XMLReader)
+		if err != nil {
+			log.Fatalf("list database error: %s", err)
+		}
+
+		fields := output.NewDefaults()
+		fields.Entries(allEntries)
+		output.Table(fields.Header, fields.Data)
 	}
 }
