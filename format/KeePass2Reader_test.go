@@ -131,4 +131,27 @@ var _ = Describe("Databases", func() {
 			Expect(entry.Notes.PlainText).To(Equal("Notes"))
 		})
 	})
+
+	Context("when opening an example database", func() {
+		It("succeeds", func() {
+			db, err := os.Open("test_data/Example.kdbx")
+			Expect(err).ToNot(HaveOccurred())
+
+			password := "password"
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reader.Db.CompressionAlgo).To(Equal(core.CompressionGzip))
+
+			searchTerm := "Sample Entry"
+			entry, err := entries.SearchByTerm(reader.XMLReader, searchTerm)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(entry.UUID).To(Equal("640c38611c3ea4489ced361f54e43dbe"))
+			Expect(entry.Title.PlainText).To(Equal("Sample Entry"))
+			Expect(entry.Password.PlainText).To(Equal("Password"))
+			Expect(entry.Username.PlainText).To(Equal("User Name"))
+			Expect(entry.URL.PlainText).To(Equal("http://keepass.info/"))
+			Expect(entry.Notes.PlainText).To(Equal("Notes"))
+		})
+	})
 })

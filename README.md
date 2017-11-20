@@ -49,7 +49,10 @@ make build
 ```
 
 Search
-------
+======
+
+Search by title or UUID
+-----------------------
 
 ```bash
 ./gkeepassxreader search 'Sample Entry' --db Database.kdbx
@@ -61,6 +64,51 @@ Password (press enter for no password):
 +----------------------------------+-----------+--------------+----------+--------------------------+-------+-------------------+
 
 ```
+
+Copy password to clipboard
+--------------------------
+
+```bash
+./gkeepassxreader --db Database.kdbx search 'Sample Entry' -x
+Password (press enter for no password): 
+password copied to clipboard
++----------------------------------+-----------+--------------+---------------------+--------------------------+-------+
+|               UUID               |   GROUP   |    TITLE     |      USERNAME       |           URL            | NOTES |
++----------------------------------+-----------+--------------+---------------------+--------------------------+-------+
+| a8370aa88afd3c4593ce981eafb789c8 | Protected | Sample Entry | Protected User Name | http://www.somesite.com/ | Notes |
++----------------------------------+-----------+--------------+---------------------+--------------------------+-------+
+```
+
+Select specific characters from password
+----------------------------------------
+
+```bash
+./gkeepassxreader --db Database.kdbx search 'Sample Entry' --chrs 1,7,8
+Password (press enter for no password): 
++----------------------------------+-----------+--------------+---------------------+--------------------------+-------+----------+
+|               UUID               |   GROUP   |    TITLE     |      USERNAME       |           URL            | NOTES | PASSWORD |
++----------------------------------+-----------+--------------+---------------------+--------------------------+-------+----------+
+| a8370aa88afd3c4593ce981eafb789c8 | Protected | Sample Entry | Protected User Name | http://www.somesite.com/ | Notes | Pte      |
++----------------------------------+-----------+--------------+---------------------+--------------------------+-------+----------+
+
+```
+
+List
+====
+
+```bash
+./gkeepassxreader list --db Example.kdbx
+Password (press enter for no password):
++----------------------------------+---------+-----------------+------------+-------------------------------------------+-------+
+|               UUID               |  GROUP  |      TITLE      |  USERNAME  |                    URL                    | NOTES |
++----------------------------------+---------+-----------------+------------+-------------------------------------------+-------+
+| 640c38611c3ea4489ced361f54e43dbe | example | Sample Entry    | User Name  | http://keepass.info/                      | Notes |
+| db8e52f8c86d7d468ecd53d4c2fe0a31 | example | Sample Entry #2 | Michael321 | http://keepass.info/help/kb/testform.html |       |
++----------------------------------+---------+-----------------+------------+-------------------------------------------+-------+
+
+```
+
+
 
 Testing
 -------
