@@ -6,29 +6,6 @@ GKeepassXReader currently supports the KeePass 2 (.kdbx) password database forma
 and not the older KeePass 1 (.kdb) databases.
 
 
-Usage
------
-
-```bash
-usage: gkeepassxreader search [<flags>] <term>
-
-Search for an entry
-
-Flags:
-      --help             Show context-sensitive help (also try --help-long and --help-man).
-      --db=DB            Keepassx database
-  -k, --keyfile=KEYFILE  Key file
-  -d, --debug            Enable debug mode
-      --version          Show application version.
-  -c, --chrs=CHRS        Copy selected characters from password [2,6,7..]
-  -x, --clipboard        Copy to clipboard
-
-Args:
-  <term>  Search by title or UUID
-
-
-```
-
 Download
 --------
 
@@ -50,6 +27,28 @@ make build
 
 Search
 ======
+
+Usage
+-----
+
+```bash
+usage: gkeepassxreader search [<flags>] <term>
+
+Search for an entry
+
+Flags:
+      --help             Show context-sensitive help (also try --help-long and --help-man).
+      --db=DB            Keepassx database
+  -k, --keyfile=KEYFILE  Key file
+  -d, --debug            Enable debug mode
+      --version          Show application version.
+  -c, --chrs=CHRS        Copy selected characters from password [2,6,7..]
+  -x, --clipboard        Copy to clipboard
+
+Args:
+  <term>  Search by title or UUID
+
+```
 
 Search by title or UUID
 -----------------------
@@ -95,6 +94,24 @@ Password (press enter for no password):
 
 List
 ====
+
+Usage
+-----
+
+```bash
+usage: gkeepassxreader list
+
+List entries
+
+Flags:
+      --help             Show context-sensitive help (also try --help-long and --help-man).
+      --db=DB            Keepassx database
+  -k, --keyfile=KEYFILE  Key file
+  -d, --debug            Enable debug mode
+      --version          Show application version.
+
+```
+
 
 ```bash
 ./gkeepassxreader list --db Example.kdbx
