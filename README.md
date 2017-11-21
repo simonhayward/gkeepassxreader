@@ -1,21 +1,18 @@
-GKeepassXReader
-===============
+# GKeepassXReader
 
 A simple command line interface for [KeePassX][1] database files. 
 GKeepassXReader currently supports the KeePass 2 (.kdbx) password database format 
 and not the older KeePass 1 (.kdb) databases.
 
 
-Download
---------
+### Download
 
 ```bash
 git clone git@github.com:simonhayward/gkeepassxreader.git
 
 ```
 
-Build
------
+### Build
 
 [Dep][3] is required to install the dependencies
 
@@ -25,11 +22,9 @@ dep ensure
 make build
 ```
 
-Search
-======
+## Search
 
-Usage
------
+### Usage
 
 ```bash
 usage: gkeepassxreader search [<flags>] <term>
@@ -50,8 +45,7 @@ Args:
 
 ```
 
-Search by title or UUID
------------------------
+#### Search by title or UUID
 
 ```bash
 ./gkeepassxreader search 'Sample Entry' --db Database.kdbx
@@ -64,8 +58,7 @@ Password (press enter for no password):
 
 ```
 
-Copy password to clipboard
---------------------------
+#### Copy password to clipboard
 
 ```bash
 ./gkeepassxreader --db Database.kdbx search 'Sample Entry' -x
@@ -78,8 +71,7 @@ password copied to clipboard
 +----------------------------------+-----------+--------------+---------------------+--------------------------+-------+
 ```
 
-Select specific characters from password
-----------------------------------------
+#### Select specific characters from password
 
 ```bash
 ./gkeepassxreader --db Database.kdbx search 'Sample Entry' --chrs 1,7,8
@@ -92,11 +84,9 @@ Password (press enter for no password):
 
 ```
 
-List
-====
+## List
 
-Usage
------
+### Usage
 
 ```bash
 usage: gkeepassxreader list
@@ -127,8 +117,7 @@ Password (press enter for no password):
 
 
 
-Testing
--------
+## Testing
 
 [Ginkgo][4] is used to run the tests
 

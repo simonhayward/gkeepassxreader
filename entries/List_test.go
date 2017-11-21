@@ -223,4 +223,37 @@ var _ = Describe("Entries", func() {
 			Expect(listEntries).To(Equal(expectedEntries))
 		})
 	})
+
+	Context("when requesting a list of entries which are protected", func() {
+		It("succeeds and returns all entries", func() {
+
+			db, err := os.Open("../format/test_data/Format200.kdbx")
+			Expect(err).ToNot(HaveOccurred())
+
+			password := "a"
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
+			Expect(err).ToNot(HaveOccurred())
+
+			listEntries, err := entries.List(reader.XMLReader)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(listEntries[0].Group).To(Equal("Format200"))
+
+			Expect(listEntries[0].Title.Protected).To(Equal(false))
+			Expect(listEntries[0].Title.Data).To(Equal("Sample Entry"))
+			Expect(listEntries[0].Title.PlainText).To(Equal("Sample Entry"))
+
+			Expect(listEntries[0].Password.Data).To(Equal("Password"))
+			Expect(listEntries[0].Password.PlainText).To(Equal("Password"))
+			Expect(listEntries[0].Password.Protected).To(Equal(false))
+
+			Expect(listEntries[0].URL.Data).To(Equal("YtgAIKYL4ggH0nzaFP4srWV+GC8A1B0I"))
+			Expect(listEntries[0].URL.PlainText).To(Equal("http://www.somesite.com/"))
+			Expect(listEntries[0].URL.Protected).To(Equal(true))
+
+			Expect(listEntries[0].Username.Data).To(Equal("VK3dahCqvgR8"))
+			Expect(listEntries[0].Username.PlainText).To(Equal("User Name"))
+			Expect(listEntries[0].Username.Protected).To(Equal(true))
+		})
+	})
 })

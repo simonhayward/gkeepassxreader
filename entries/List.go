@@ -12,5 +12,9 @@ func List(xmlReader *format.KeePass2XmlReader) ([]format.Entry, error) {
 		return nil, err
 	}
 
+	if err := decodeEntries(xmlReader, entries, false); err != nil {
+		return nil, err
+	}
+
 	return entries, nil
 }

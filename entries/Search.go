@@ -21,40 +21,21 @@ func SearchByTerm(xmlReader *format.KeePass2XmlReader, searchTerm string) (*form
 		if e.Title.Protected {
 			err := decodeEntryValue(xmlReader, e.Title)
 			if err != nil {
-				return nil, fmt.Errorf("unable to decode title: %s", err)
+				return nil, err
 			}
 		}
 	}
 
 	idx := search(searchTerm, entries)
 	if idx < len(entries) {
-		for _, ev := range []*format.EntryValue{
-			entries[idx].Notes,
-			entries[idx].Password,
-			entries[idx].URL,
-			entries[idx].Username,
-		} {
-			if ev.Protected {
-				err := decodeEntryValue(xmlReader, ev)
-				if err != nil {
-					return nil, fmt.Errorf("unable to decode entry: %s", err)
-				}
-			}
+		if err := decodeEntries(xmlReader, []format.Entry{entries[idx]}, true); err != nil {
+			return nil, err
 		}
 
 		return &entries[idx], nil
 	}
 
 	return nil, nil
-}
-
-func decodeEntryValue(xmlReader *format.KeePass2XmlReader, eValue *format.EntryValue) error {
-	plaintext, err := xmlReader.KeePass2RandomStream.Process(eValue.RandomOffset, []byte(eValue.CipherText))
-	if err != nil {
-		return fmt.Errorf("unable to decode password: %s", err)
-	}
-	eValue.PlainText = string(plaintext)
-	return nil
 }
 
 func search(searchTerm string, entries []format.Entry) int {
