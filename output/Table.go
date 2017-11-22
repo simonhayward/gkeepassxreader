@@ -21,15 +21,24 @@ func NewDefaults() *Data {
 }
 
 //Entries fields to display
-func (d *Data) Entries(entries []*format.Entry) {
+func (d *Data) Entries(entries []format.Entry) {
 	for _, entry := range entries {
+
+		var url, notes string
+		if entry.Notes != nil {
+			notes = entry.Notes.PlainText
+		}
+		if entry.URL != nil {
+			url = entry.URL.PlainText
+		}
+
 		d.Data = append(d.Data, []string{
 			entry.UUID,
 			entry.Group,
 			entry.Title.PlainText,
 			entry.Username.PlainText,
-			entry.URL.PlainText,
-			entry.Notes.PlainText,
+			url,
+			notes,
 		})
 	}
 }

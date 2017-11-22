@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/simonhayward/gkeepassxreader/core"
 	"github.com/simonhayward/gkeepassxreader/keys"
 	"github.com/simonhayward/gkeepassxreader/streams"
@@ -80,18 +81,18 @@ func OpenDatabase(masterKey *keys.CompositeKey, dbFile *os.File) (*KeePass2Reade
 func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeKey) error {
 
 	if err := k.CheckSignature(db); err != nil {
-		return fmt.Errorf("Signature check failed %s", err)
+		return errors.Wrap(err, "Signature check failed")
 	}
 
 	version, err := k.CheckVersion(db)
 	if err != nil {
-		return fmt.Errorf("Version check failed %s", err)
+		return errors.Wrap(err, "Version check failed")
 	}
 
 	for {
 		continueLoop, err := k.ReadHeaders(db)
 		if err != nil {
-			return fmt.Errorf("Reading headers failed %s", err)
+			return errors.Wrap(err, "Reading headers failed")
 		}
 		if continueLoop == false {
 			break
@@ -99,11 +100,11 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 	}
 
 	if err := k.CheckHeaders(); err != nil {
-		return fmt.Errorf("Header check failed %s", err)
+		return errors.Wrap(err, "Header check failed")
 	}
 
 	if err := k.Db.SetKey(compositeKey, k.transformSeed); err != nil {
-		return fmt.Errorf("Unable to calculate master key %s", err)
+		return errors.Wrap(err, "Unable to calculate master key")
 	}
 
 	h := sha256.New()
@@ -113,19 +114,19 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 
 	block, err := aes.NewCipher(finalKey)
 	if err != nil {
-		return fmt.Errorf("New AES Cipher error %s", err)
+		return errors.Wrap(err, "New AES Cipher error")
 	}
 
 	cipherStream, err := streams.NewSymmetricCipherStream(block, k.encryptionIV, db, streams.DirectionDecrypt)
 	if err != nil {
-		return fmt.Errorf("Cipher stream error %s", err)
+		return errors.Wrap(err, "Cipher stream error")
 	}
 
 	var realStart []byte
 	cipherStream.ReadData(&realStart, 32)
 
 	if !bytes.Equal(realStart, k.streamStartBytes) {
-		return fmt.Errorf("Wrong key or database file is corrupt")
+		return errors.New("Wrong key or database file is corrupt")
 	}
 
 	/*
@@ -157,12 +158,12 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 		zr, err := gzip.NewReader(buf)
 
 		if err != nil {
-			return fmt.Errorf("gzip new reader failed: %s", err)
+			return errors.Wrap(err, "gzip new reader failed")
 		}
 
 		b, err := ioutil.ReadAll(zr)
 		if err != nil {
-			return fmt.Errorf("xml error: %s", err)
+			return errors.Wrap(err, "xml error")
 		}
 		xmlDevice = bytes.NewReader(b)
 	}
@@ -170,16 +171,16 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 	randomKey := sha256.Sum256(k.protectedStreamKey)
 	k.XMLReader, err = NewKeePass2XmlReader(xmlDevice, &randomKey)
 	if err != nil {
-		return fmt.Errorf("cannot create new keepass2xml reader: %s", err)
+		return errors.Wrap(err, "keepass2xml reader creation failed")
 	}
 
 	xmlHeaderHash, err := k.XMLReader.HeaderHash()
 	if err != nil {
-		return fmt.Errorf("xml header hash error: %s", err)
+		return errors.Wrap(err, "xml header hash error")
 	}
 
 	if !(version < keepass2FileVersion || len(xmlHeaderHash) > 0) {
-		return fmt.Errorf("xml header hash error")
+		return errors.New("xml header hash error")
 	}
 
 	if len(xmlHeaderHash) > 0 {
@@ -188,7 +189,7 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 		headerHash := hh.Sum(nil)
 
 		if !bytes.Equal(headerHash, xmlHeaderHash) {
-			return fmt.Errorf("header doesn't match hash")
+			return errors.New("header doesn't match hash")
 		}
 	}
 
@@ -202,7 +203,7 @@ func (k *KeePass2Reader) CheckSignature(db *os.File) error {
 	_, err := db.Read(signature1Bytes)
 
 	if err != nil {
-		return fmt.Errorf("unable to read signature1: %s", err)
+		return errors.Wrap(err, "unable to read signature1")
 	}
 
 	k.headerStoredData = append(k.headerStoredData, signature1Bytes...)
@@ -210,18 +211,18 @@ func (k *KeePass2Reader) CheckSignature(db *os.File) error {
 	var signature1 uint32
 	buf1 := bytes.NewReader(signature1Bytes)
 	if err := binary.Read(buf1, binary.LittleEndian, &signature1); err != nil {
-		return fmt.Errorf("signature1 read failed: %s", err)
+		return errors.Wrap(err, "signature1 read failed")
 	}
 
 	if signature1 != keepass2Signature1 {
-		return fmt.Errorf("not a KeePass database")
+		return errors.New("not a KeePass database")
 	}
 
 	signature2Bytes := make([]byte, 4)
 	_, err = db.Read(signature2Bytes)
 
 	if err != nil {
-		return fmt.Errorf("unable to read signature2: %s", err)
+		return errors.Wrap(err, "unable to read signature2")
 	}
 
 	k.headerStoredData = append(k.headerStoredData, signature2Bytes...)
@@ -229,13 +230,13 @@ func (k *KeePass2Reader) CheckSignature(db *os.File) error {
 	var signature2 uint32
 	buf2 := bytes.NewReader(signature2Bytes)
 	if err := binary.Read(buf2, binary.LittleEndian, &signature2); err != nil {
-		return fmt.Errorf("signature2 read failed: %s", err)
+		return errors.Wrap(err, "signature2 read failed")
 	}
 
 	if signature2 == keepass1Signature2 {
-		return fmt.Errorf("the selected file is an old KeePass 1 database (.kdb)")
+		return errors.New("the selected file is an old KeePass 1 database (.kdb)")
 	} else if signature2 != keepass2Signature2 {
-		return fmt.Errorf("not a KeePass database")
+		return errors.New("not a KeePass database")
 	}
 
 	return nil
@@ -247,7 +248,7 @@ func (k *KeePass2Reader) CheckVersion(db *os.File) (uint32, error) {
 	_, err := db.Read(versionBytes)
 
 	if err != nil {
-		return 0, fmt.Errorf("unable to read version: %s", err)
+		return 0, errors.Wrap(err, "unable to read version")
 	}
 
 	k.headerStoredData = append(k.headerStoredData, versionBytes...)
@@ -256,7 +257,7 @@ func (k *KeePass2Reader) CheckVersion(db *os.File) (uint32, error) {
 	var version uint32
 
 	if err := binary.Read(buf, binary.LittleEndian, &version); err != nil {
-		return 0, fmt.Errorf("binary.Read failed: %s", err)
+		return 0, errors.Wrap(err, "binary.Read failed")
 	}
 
 	version = version & keepass2FileVersionCriticalMask
@@ -266,7 +267,7 @@ func (k *KeePass2Reader) CheckVersion(db *os.File) (uint32, error) {
 	log.Debugf("checking versions. min: %d max: %d", keepass2FileVersionMin, maxVersion)
 
 	if (version < keepass2FileVersionMin) || (version > maxVersion) {
-		return 0, fmt.Errorf("unsupported KeePass database version")
+		return 0, errors.New("unsupported KeePass database version")
 	}
 
 	log.Debugf("version: %d", version)
@@ -279,7 +280,7 @@ func (k *KeePass2Reader) CheckHeaders() error {
 	if len(k.masterSeed) == 0 || len(k.transformSeed) == 0 || len(k.encryptionIV) == 0 ||
 		len(k.streamStartBytes) == 0 || len(k.protectedStreamKey) == 0 ||
 		len(k.Db.Cipher.Data) == 0 {
-		return fmt.Errorf("missing database headers")
+		return errors.New("missing database headers")
 	}
 	return nil
 }
@@ -292,20 +293,20 @@ func (k *KeePass2Reader) ReadHeaders(db *os.File) (bool, error) {
 	_, err := db.Read(fieldIDArray)
 
 	if err != nil {
-		return false, fmt.Errorf("unable to read fieldIDArray: %s", err)
+		return false, errors.Wrap(err, "unable to read fieldIDArray")
 	}
 
 	k.headerStoredData = append(k.headerStoredData, fieldIDArray...)
 
 	if len(fieldIDArray) != 1 {
-		return false, fmt.Errorf("invalid header id size")
+		return false, errors.New("invalid header id size")
 	}
 	var fieldID = fieldIDArray[0]
 	log.Debugf("header field id: %d", fieldID)
 
 	var fieldLen uint16
 	if err := binary.Read(db, binary.LittleEndian, &fieldLen); err != nil {
-		return false, fmt.Errorf("invalid header field length: %s", err)
+		return false, errors.Wrap(err, "invalid header field length")
 	}
 
 	var h, l uint8 = uint8(fieldLen >> 8), uint8(fieldLen & 0xff)
@@ -318,10 +319,10 @@ func (k *KeePass2Reader) ReadHeaders(db *os.File) (bool, error) {
 		fieldData = make([]byte, int(fieldLen))
 		n, err := db.Read(fieldData)
 		if err != nil {
-			return false, fmt.Errorf("unable to read field length")
+			return false, errors.New("unable to read field length")
 		}
 		if n != int(fieldLen) {
-			return false, fmt.Errorf("invalid header data length")
+			return false, errors.New("invalid header data length")
 		}
 	}
 
@@ -334,51 +335,51 @@ func (k *KeePass2Reader) ReadHeaders(db *os.File) (bool, error) {
 	case keepass2CipherID:
 		log.Debugf("setting cipher: FieldID: %d fieldData len: %d", fieldID, len(fieldData))
 		if err = k.setCipher(fieldData); err != nil {
-			return false, fmt.Errorf("cipher not set: %s", err)
+			return false, errors.Wrap(err, "cipher not set")
 		}
 	case keepass2CompressionFlags:
 		log.Debugf("setting compression flags: fieldID: %d", fieldID)
 		if err = k.setCompressionFlags(fieldData); err != nil {
-			return false, fmt.Errorf("compression flags not set: %s", err)
+			return false, errors.Wrap(err, "compression flags not set")
 		}
 	case keepass2MasterSeed:
 		log.Debugf("setting master seed: %d", fieldID)
 		if err = k.setMasterSeed(fieldData); err != nil {
-			return false, fmt.Errorf("master seed not set: %s", err)
+			return false, errors.Wrap(err, "master seed not set")
 		}
 	case keepass2TransformSeed:
 		log.Debugf("setting transform seed: %d", fieldID)
 		if err = k.setTransformSeed(fieldData); err != nil {
-			return false, fmt.Errorf("transform seed not set: %s", err)
+			return false, errors.Wrap(err, "transform seed not set")
 		}
 	case keepass2TransformRounds:
 		log.Debugf("setting transform rounds: %d", fieldID)
 		if err = k.setTransformRounds(fieldData); err != nil {
-			return false, fmt.Errorf("transform rounds not set: %s", err)
+			return false, errors.Wrap(err, "transform rounds not set")
 		}
 	case keepass2EncryptionIV:
 		log.Debugf("set setEncryptionIV: %d", fieldID)
 		if err = k.setEncryptionIV(fieldData); err != nil {
-			return false, fmt.Errorf("encryptionIV not set: %s", err)
+			return false, errors.Wrap(err, "encryptionIV not set")
 		}
 	case keepass2ProtectedStreamKey:
 		log.Debugf("setting protected stream key: %d", fieldID)
 		if err = k.setProtectedStreamKey(fieldData); err != nil {
-			return false, fmt.Errorf("protected stream key not set: %s", err)
+			return false, errors.Wrap(err, "protected stream key not set")
 		}
 	case keepass2StreamStartBytes:
 		log.Debugf("setting StreamStartBytes: %d", fieldID)
 		if err = k.setStreamStartBytes(fieldData); err != nil {
-			return false, fmt.Errorf("stream start bytes not set: %s", err)
+			return false, errors.Wrap(err, "stream start bytes not set")
 		}
 	case keepass2InnerRandomStreamID:
 		log.Debugf("setting InnerRandomStreamID: %d", fieldID)
 		if err = k.setInnerRandomStreamID(fieldData); err != nil {
-			return false, fmt.Errorf("innerRandomStreamID not set: %s", err)
+			return false, errors.Wrap(err, "innerRandomStreamID not set")
 		}
 	default:
 		log.Errorf("unknown header field read: id=%d", fieldID)
-		return false, fmt.Errorf("unknown header field: %d", fieldID)
+		return false, errors.Wrapf(err, "unknown header field: %d", fieldID)
 	}
 
 	return !headerEnd, nil
@@ -387,7 +388,7 @@ func (k *KeePass2Reader) ReadHeaders(db *os.File) (bool, error) {
 func (k *KeePass2Reader) setCipher(b []byte) error {
 
 	if len(b) != core.UUIDLength {
-		return fmt.Errorf("invalid cipher uuid length: %d expected: %d", len(b), core.UUIDLength)
+		return errors.Errorf("invalid cipher uuid length: %d expected: %d", len(b), core.UUIDLength)
 	}
 
 	cipher := core.UUID{
@@ -395,7 +396,7 @@ func (k *KeePass2Reader) setCipher(b []byte) error {
 	}
 
 	if !bytes.Equal(b, core.Keepass2CipherAes) {
-		return fmt.Errorf("unsupported cipher")
+		return errors.New("unsupported cipher")
 	}
 
 	k.Db.Cipher = cipher
@@ -405,17 +406,17 @@ func (k *KeePass2Reader) setCipher(b []byte) error {
 
 func (k *KeePass2Reader) setCompressionFlags(b []byte) error {
 	if len(b) != 4 {
-		return fmt.Errorf("invalid compression flags length")
+		return errors.New("invalid compression flags length")
 	}
 
 	var id uint32
 	buf := bytes.NewBuffer(b)
 	if err := binary.Read(buf, binary.LittleEndian, &id); err != nil {
-		return fmt.Errorf("binary.Read failed: %s", err)
+		return errors.Wrap(err, "binary.Read failed")
 	}
 
 	if id > core.CompressionAlgorithmMax {
-		return fmt.Errorf("unsupported compression algorithm")
+		return errors.New("unsupported compression algorithm")
 	}
 
 	k.Db.CompressionAlgo = id
@@ -424,7 +425,7 @@ func (k *KeePass2Reader) setCompressionFlags(b []byte) error {
 
 func (k *KeePass2Reader) setMasterSeed(b []byte) error {
 	if len(b) != 32 {
-		return fmt.Errorf("invalid master seed size")
+		return errors.New("invalid master seed size")
 	}
 
 	k.masterSeed = b
@@ -433,7 +434,7 @@ func (k *KeePass2Reader) setMasterSeed(b []byte) error {
 
 func (k *KeePass2Reader) setTransformSeed(b []byte) error {
 	if len(b) != 32 {
-		return fmt.Errorf("invalid transform seed size")
+		return errors.New("invalid transform seed size")
 	}
 
 	k.transformSeed = b
@@ -442,13 +443,13 @@ func (k *KeePass2Reader) setTransformSeed(b []byte) error {
 
 func (k *KeePass2Reader) setTransformRounds(b []byte) error {
 	if len(b) != 8 {
-		return fmt.Errorf("invalid transform rounds size")
+		return errors.New("invalid transform rounds size")
 	}
 
 	var rounds uint64
 	buf := bytes.NewBuffer(b)
 	if err := binary.Read(buf, binary.LittleEndian, &rounds); err != nil {
-		return fmt.Errorf("binary.Read failed: %s", err)
+		return errors.Wrap(err, "binary.Read failed")
 	}
 
 	if k.Db.TransformRounds != rounds {
@@ -461,7 +462,7 @@ func (k *KeePass2Reader) setTransformRounds(b []byte) error {
 
 func (k *KeePass2Reader) setEncryptionIV(b []byte) error {
 	if len(b) != 16 {
-		return fmt.Errorf("invalid encryption iv size")
+		return errors.New("invalid encryption iv size")
 	}
 
 	k.encryptionIV = b
@@ -470,7 +471,7 @@ func (k *KeePass2Reader) setEncryptionIV(b []byte) error {
 
 func (k *KeePass2Reader) setProtectedStreamKey(b []byte) error {
 	if len(b) != 32 {
-		return fmt.Errorf("invalid stream key size")
+		return errors.New("invalid stream key size")
 	}
 
 	k.protectedStreamKey = b
@@ -479,7 +480,7 @@ func (k *KeePass2Reader) setProtectedStreamKey(b []byte) error {
 
 func (k *KeePass2Reader) setStreamStartBytes(b []byte) error {
 	if len(b) != 32 {
-		return fmt.Errorf("invalid start bytes size")
+		return errors.New("invalid start bytes size")
 	}
 
 	k.streamStartBytes = b
@@ -488,17 +489,17 @@ func (k *KeePass2Reader) setStreamStartBytes(b []byte) error {
 
 func (k *KeePass2Reader) setInnerRandomStreamID(b []byte) error {
 	if len(b) != 4 {
-		return fmt.Errorf("invalid random stream id size")
+		return errors.New("invalid random stream id size")
 	}
 
 	var id uint32
 	buf := bytes.NewBuffer(b)
 	if err := binary.Read(buf, binary.LittleEndian, &id); err != nil {
-		return fmt.Errorf("binary.Read failed: %s", err)
+		return errors.Wrap(err, "binary.Read failed")
 	}
 
 	if id != keepass2Salsa20 {
-		return fmt.Errorf("unsupported random stream algorithm")
+		return errors.New("unsupported random stream algorithm")
 	}
 
 	log.Debugf("setting inner random stream id: %d", id)

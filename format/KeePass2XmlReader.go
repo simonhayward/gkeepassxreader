@@ -4,9 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"io/ioutil"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -67,13 +68,13 @@ func NewKeePass2XmlReader(xmlDevice io.Reader, key *[32]byte) (*KeePass2XmlReade
 
 	data, err := ioutil.ReadAll(xmlDevice)
 	if err != nil {
-		return nil, fmt.Errorf("read xml error: %s", err)
+		return nil, errors.Wrap(err, "read error")
 	}
 
 	f := KeePass2XmlFile{}
 	err = xml.Unmarshal(data, &f)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal xml error: %s", err)
+		return nil, errors.Wrap(err, "unmarshal error")
 	}
 
 	return &KeePass2XmlReader{
@@ -87,7 +88,7 @@ func (k *KeePass2XmlReader) HeaderHash() ([]byte, error) {
 
 	data, err := base64.StdEncoding.DecodeString(k.KeePass2XmlFile.Meta.HeaderHash)
 	if err != nil {
-		return nil, fmt.Errorf("base64 decode error: %s", err)
+		return nil, errors.Wrap(err, "base64 decode failed")
 	}
 
 	return data, nil
@@ -98,7 +99,7 @@ func (k *KeePass2XmlReader) newEntryValue(sEntry stringEntry, randomBytesOffset 
 	if sEntry.Value.Protected == "True" && len(sEntry.Value.Data) > 0 {
 		cipherText, err := base64.StdEncoding.DecodeString(sEntry.Value.Data)
 		if err != nil {
-			return nil, fmt.Errorf("ciphertext decode err: %s", err)
+			return nil, errors.Wrap(err, "ciphertext decode failed")
 		}
 
 		e := &EntryValue{
@@ -132,34 +133,34 @@ func (k *KeePass2XmlReader) readEntries(entries *[]Entry, rEntries []entry, entr
 			case "Notes":
 				notes, err = k.newEntryValue(sEntry, randomBytesOffset)
 				if err != nil {
-					return fmt.Errorf("Notes entry value failed: %s", err)
+					return errors.Wrap(err, "Notes entry value failed")
 				}
 			case "Password":
 				password, err = k.newEntryValue(sEntry, randomBytesOffset)
 				if err != nil {
-					return fmt.Errorf("Password entry value failed: %s", err)
+					return errors.Wrap(err, "Password entry value failed")
 				}
 			case "Title":
 				title, err = k.newEntryValue(sEntry, randomBytesOffset)
 				if err != nil {
-					return fmt.Errorf("Title entry value failed: %s", err)
+					return errors.Wrap(err, "Title entry value failed")
 				}
 			case "URL":
 				url, err = k.newEntryValue(sEntry, randomBytesOffset)
 				if err != nil {
-					return fmt.Errorf("URL entry value failed: %s", err)
+					return errors.Wrap(err, "URL entry value failed")
 				}
 			case "UserName":
 				username, err = k.newEntryValue(sEntry, randomBytesOffset)
 				if err != nil {
-					return fmt.Errorf("UserName entry value failed: %s", err)
+					return errors.Wrap(err, "UserName entry value failed")
 				}
 			}
 		}
 
 		uuid, err := base64.StdEncoding.DecodeString(entry.UUID)
 		if err != nil {
-			return fmt.Errorf("base64 decode for uuid failed: %s", err)
+			return errors.Wrap(err, "base64 decode for uuid failed")
 		}
 
 		e := Entry{
