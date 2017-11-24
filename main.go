@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	version = "0.0.2"
+	version = "0.0.3"
 )
 
 var (
@@ -73,9 +73,12 @@ func main() {
 			fields := output.NewDefaults()
 			fields.Entries([]format.Entry{*entry})
 
-			// Extract x characters from password
+			// Extract characters from password
 			if len(*searchChrs) > 0 {
-				output.Extract(entry, *searchChrs)
+				err := output.Extract(entry, *searchChrs)
+				if err != nil {
+					log.Fatalf("unable to extract characters: %s", err)
+				}
 			}
 
 			// Copy password to clipboard
