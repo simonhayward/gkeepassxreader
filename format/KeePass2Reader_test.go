@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/simonhayward/gkeepassxreader/core"
-	"github.com/simonhayward/gkeepassxreader/entries"
 	"github.com/simonhayward/gkeepassxreader/format"
 	"github.com/simonhayward/gkeepassxreader/keys"
 )
@@ -15,8 +14,13 @@ import (
 var _ = Describe("Databases", func() {
 
 	var (
-		db *os.File
+		entryService *format.EntryServiceOp
+		db           *os.File
 	)
+
+	BeforeEach(func() {
+		entryService = &format.EntryServiceOp{}
+	})
 
 	AfterEach(func() {
 		db.Close()
@@ -33,7 +37,9 @@ var _ = Describe("Databases", func() {
 			Expect(reader.Db.CompressionAlgo).To(Equal(core.CompressionGzip))
 
 			searchTerm := "Sample Entry"
-			entry, err := entries.SearchByTerm(reader.XMLReader, searchTerm)
+
+			entryService.XMLReader = reader.XMLReader
+			entry, err := entryService.SearchByTerm(searchTerm)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(entry.Group).To(Equal("Protected"))
@@ -96,8 +102,9 @@ var _ = Describe("Databases", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reader.Db.CompressionAlgo).To(Equal(core.CompressionGzip))
 
+			entryService.XMLReader = reader.XMLReader
 			searchTerm := "Sample Entry"
-			entry, err := entries.SearchByTerm(reader.XMLReader, searchTerm)
+			entry, err := entryService.SearchByTerm(searchTerm)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(entry.Group).To(Equal("Format200"))
@@ -120,8 +127,9 @@ var _ = Describe("Databases", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reader.Db.CompressionAlgo).To(Equal(core.CompressionGzip))
 
+			entryService.XMLReader = reader.XMLReader
 			searchTerm := "Sample Entry"
-			entry, err := entries.SearchByTerm(reader.XMLReader, searchTerm)
+			entry, err := entryService.SearchByTerm(searchTerm)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(entry.Title.PlainText).To(Equal("Sample Entry"))
@@ -142,8 +150,9 @@ var _ = Describe("Databases", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reader.Db.CompressionAlgo).To(Equal(core.CompressionGzip))
 
+			entryService.XMLReader = reader.XMLReader
 			searchTerm := "Sample Entry"
-			entry, err := entries.SearchByTerm(reader.XMLReader, searchTerm)
+			entry, err := entryService.SearchByTerm(searchTerm)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(entry.UUID).To(Equal("640c38611c3ea4489ced361f54e43dbe"))
