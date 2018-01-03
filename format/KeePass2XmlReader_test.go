@@ -1,6 +1,7 @@
 package format_test
 
 import (
+	"encoding/hex"
 	"encoding/xml"
 	"io/ioutil"
 	"os"
@@ -94,6 +95,35 @@ var _ = Describe("Xml", func() {
 			})
 		})
 
+		Context("when given a single valid xml group with historical entries", func() {
+			It("returns no error and sets the entries historical values", func() {
+				xmlBody, err := ioutil.ReadFile("test_data/History.xml")
+				Expect(err).ToNot(HaveOccurred())
+				err = xml.Unmarshal(xmlBody, &v)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(len(v.Root.Groups)).To(Equal(1))
+				Expect(len(v.Root.Groups[0].Groups)).To(Equal(1))
+				Expect(v.Root.Groups[0].Groups[0].Name).To(Equal("Emails"))
+				Expect(len(v.Root.Groups[0].Groups[0].Entry[0].HistoryEntries)).To(Equal(3))
+
+				historyEntriesPasswords := []string{
+					"ecOhbRkpfOSDhTTCaUlkdg==",
+					"9FmeO/ozrBmRrkvz/z4aiA==",
+					"58MDXimsUWKtEIP4JEW+qg==",
+				}
+
+				for i, entry := range v.Root.Groups[0].Groups[0].Entry[0].HistoryEntries {
+					for _, e := range entry.StringEntry {
+						if e.Key == "Password" {
+							Expect(e.Value.Protected).To(Equal("True"))
+							Expect(e.Value.Data).To(Equal(historyEntriesPasswords[i]))
+						}
+					}
+				}
+			})
+		})
+
 		Context("when given a valid (format 200) xml database", func() {
 			It("returns no error and sets the expected values", func() {
 				xmlBody, err := ioutil.ReadFile("test_data/XmlFormat200.xml")
@@ -131,6 +161,7 @@ var _ = Describe("Xml", func() {
 		})
 
 	})
+
 	Describe("Groups XML", func() {
 
 		var (
@@ -181,6 +212,39 @@ var _ = Describe("Xml", func() {
 				}
 			})
 
+		})
+	})
+
+	Describe("Historical entries XML", func() {
+
+		Context("when opening an xml database with historical entries", func() {
+			It("succeeds marking those entries as historical", func() {
+				s := "f174ffa5ae3b7914ce301bf9841386c66b23ec435d71810df3c5c3b6ded86ae9"
+				decoded, err := hex.DecodeString(s)
+				Expect(err).ToNot(HaveOccurred())
+
+				var randomKey [32]byte
+				copy(randomKey[:], decoded)
+
+				xmlDevice, err := os.Open("test_data/History.xml")
+				Expect(err).ToNot(HaveOccurred())
+
+				XMLReader, err := format.NewKeePass2XmlReader(xmlDevice, &randomKey)
+				Expect(err).ToNot(HaveOccurred())
+
+				entries := []format.Entry{}
+				randomBytesOffset := 0
+				err = XMLReader.ReadGroups(&entries, XMLReader.KeePass2XmlFile.Root.Groups, &randomBytesOffset)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(len(entries)).To(Equal(4))
+
+				Expect(entries[0].Historical).To(Equal(false))
+
+				for _, e := range entries[1:] {
+					Expect(e.Historical).To(Equal(true))
+				}
+			})
 		})
 	})
 })

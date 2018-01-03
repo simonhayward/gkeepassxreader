@@ -5,7 +5,6 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/simonhayward/gkeepassxreader/entries"
 	"github.com/simonhayward/gkeepassxreader/format"
 	"github.com/simonhayward/gkeepassxreader/keys"
 	"github.com/simonhayward/gkeepassxreader/output"
@@ -15,13 +14,14 @@ import (
 )
 
 const (
-	version = "0.0.3"
+	version = "0.0.4"
 )
 
 var (
 	db      = kingpin.Flag("db", "Keepassx database").Required().File()
 	keyfile = kingpin.Flag("keyfile", "Key file").Short('k').File()
 	debug   = kingpin.Flag("debug", "Enable debug mode").Short('d').Bool()
+	history = kingpin.Flag("history", "Include historical entries").Short('h').Bool()
 
 	cmdSearch       = kingpin.Command("search", "Search for an entry")
 	searchTerm      = cmdSearch.Arg("term", "Search by title or UUID").Required().String()
@@ -42,7 +42,9 @@ func main() {
 	log.SetLevel(level)
 	log.SetOutput(os.Stdout)
 
+	var entryService format.EntryService
 	var password string
+
 	if terminal.IsTerminal(int(os.Stdout.Fd())) {
 		fmt.Fprint(os.Stderr, "Password (press enter for no password): ")
 		stdinPassword, err := terminal.ReadPassword(int(syscall.Stdin))
@@ -60,9 +62,14 @@ func main() {
 		log.Fatalf("open database error: %s", err)
 	}
 
+	entryService = &format.EntryServiceOp{
+		XMLReader:         reader.XMLReader,
+		HistoricalEntries: *history,
+	}
+
 	switch kingpin.Parse() {
 	case cmdSearch.FullCommand():
-		entry, err := entries.SearchByTerm(reader.XMLReader, *searchTerm)
+		entry, err := entryService.SearchByTerm(*searchTerm)
 		if err != nil {
 			log.Fatalf("search database error: %s", err)
 		}
@@ -101,7 +108,7 @@ func main() {
 			output.Table(fields.Header, fields.Data)
 		}
 	case cmdList.FullCommand():
-		allEntries, err := entries.List(reader.XMLReader)
+		allEntries, err := entryService.List()
 		if err != nil {
 			log.Fatalf("list database error: %s", err)
 		}

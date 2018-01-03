@@ -1,30 +1,50 @@
 # GKeepassXReader
 
-A simple command line interface for [KeePassX][1] database files. 
-GKeepassXReader currently supports the KeePass 2 (.kdbx) password database format 
-and not the older KeePass 1 (.kdb) databases.
+## Overview
 
+A simple command line interface for [KeePassX][0] database files, to search and list entries.
+GKeepassXReader currently supports the KeePass 2 (.kdbx) database format.
 
-### Download
+## Building from source
+
+This section describes how to build GKeepassXReader from source.
+
+### Build Prerequisites
+
+1. *Install Go*
+
+    GKeepassXReader requires [Go 1.9][1] or later.
+
+1. *Install `dep`*
+
+    GKeepassXReader uses [`dep`][2] for dependency management.
+
+    ```bash
+    go get -u github.com/golang/dep/cmd/dep
+    ```
+
+### Fetch the source
 
 ```bash
-git clone git@github.com:simonhayward/gkeepassxreader.git
-
+go get -d github.com/simonhayward/gkeepassxreader
+cd $GOPATH/src/github.com/simonhayward/gkeepassxreader
+dep ensure -vendor-only
 ```
 
-### Build
+### Building
 
-[Dep][3] is required to install the dependencies
-
+To build GKeepassXReader, run:
 
 ```bash
-dep ensure
+cd $GOPATH/src/github.com/simonhayward/gkeepassxreader
 make build
 ```
 
-## Search
+This produces a `gkeepassxreader` binary in your current working directory.
 
-### Usage
+## Usage
+
+### Search
 
 ```bash
 usage: gkeepassxreader search [<flags>] <term>
@@ -36,12 +56,14 @@ Flags:
       --db=DB            Keepassx database
   -k, --keyfile=KEYFILE  Key file
   -d, --debug            Enable debug mode
+  -h, --history          Include historical entries
       --version          Show application version.
   -c, --chrs=CHRS        Copy selected characters from password [2,6,7..]
   -x, --clipboard        Copy to clipboard
 
 Args:
   <term>  Search by title or UUID
+
 
 ```
 
@@ -58,7 +80,7 @@ Password (press enter for no password):
 
 ```
 
-#### Copy password to clipboard
+#### Search by title or UUID and copy password to clipboard
 
 ```bash
 ./gkeepassxreader --db Database.kdbx search 'Sample Entry' -x
@@ -71,7 +93,7 @@ password copied to clipboard
 +----------------------------------+-----------+--------------+---------------------+--------------------------+-------+
 ```
 
-#### Select specific characters from password
+#### Search by title or UUID and select specific characters from password
 
 ```bash
 ./gkeepassxreader --db Database.kdbx search 'Sample Entry' --chrs 1,7,8
@@ -84,9 +106,7 @@ Password (press enter for no password):
 
 ```
 
-## List
-
-### Usage
+### List
 
 ```bash
 usage: gkeepassxreader list
@@ -98,10 +118,10 @@ Flags:
       --db=DB            Keepassx database
   -k, --keyfile=KEYFILE  Key file
   -d, --debug            Enable debug mode
+  -h, --history          Include historical entries
       --version          Show application version.
 
 ```
-
 
 ```bash
 ./gkeepassxreader list --db Example.kdbx
@@ -115,19 +135,18 @@ Password (press enter for no password):
 
 ```
 
+## Running the unit tests
 
+### Test Prerequisites
 
-## Testing
-
-[Ginkgo][4] is used to run the tests
-
+[Ginkgo][3] is used to run the tests
 
 ```bash
+cd $GOPATH/src/github.com/simonhayward/gkeepassxreader
 make test
 ```
 
-
-[1]: https://www.keepassx.org/
-[2]: https://golang.org/
-[3]: https://github.com/golang/dep
-[4]: http://onsi.github.io/ginkgo/
+[0]: https://www.keepassx.org/
+[1]: https://golang.org/
+[2]: https://github.com/golang/dep
+[3]: http://onsi.github.io/ginkgo/
