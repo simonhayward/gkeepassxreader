@@ -129,16 +129,15 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 		return errors.New("Wrong key or database file is corrupt")
 	}
 
-	/*
-		Hashed stream
-	*/
 	hashBlock := streams.NewHashedBlock(cipherStream.BlockMode, cipherStream)
 	var result []byte
 	var bytesRead int
-	byteChunks := 65500
+	byteChunks := 65500  // reads into result in byte chunks sizes
 
 	for {
 		bytesRead, err = hashBlock.ReadData(&result, byteChunks)
+		log.Debugf("bytes read from hashBlock: %d", bytesRead)
+
 		if err != nil {
 			return err
 		}
@@ -153,9 +152,11 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 		xmlDevice = bytes.NewReader(result)
 	} else {
 		log.Debugf("compression set")
+		log.Debugf("result length :%d", len(result))
 
 		buf := bytes.NewBuffer(result)
 		zr, err := gzip.NewReader(buf)
+		defer zr.Close()
 
 		if err != nil {
 			return errors.Wrap(err, "gzip new reader failed")
@@ -165,6 +166,7 @@ func (k *KeePass2Reader) ReadDatabase(db *os.File, compositeKey *keys.CompositeK
 		if err != nil {
 			return errors.Wrap(err, "xml error")
 		}
+
 		xmlDevice = bytes.NewReader(b)
 	}
 
