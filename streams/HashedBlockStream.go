@@ -26,11 +26,24 @@ func NewHashedBlock(mode cipher.BlockMode, stream *SymmetricCipherStream) *Hashe
 	}
 }
 
+func (hb *HashedBlock) appendSlice(slice, data []byte) []byte {
+	l := len(slice)
+	if l+len(data) > cap(slice) { // reallocate
+		// Allocate double what's needed, for future growth.
+		newSlice := make([]byte, (l+len(data))*2)
+		copy(newSlice, slice)
+		slice = newSlice
+	}
+	slice = slice[0 : l+len(data)]
+	copy(slice[l:], data)
+	return slice
+}
+
 // ReadData in hashed blocks
 func (hb *HashedBlock) ReadData(data *[]byte, maxSize int) (int, error) {
 
 	bytesRemaining := maxSize
-	var offset, bytesToCopy int
+	var bytesToCopy int
 
 	if hb.eof {
 		return 0, nil
@@ -48,19 +61,13 @@ func (hb *HashedBlock) ReadData(data *[]byte, maxSize int) (int, error) {
 		}
 
 		bytesToCopy = len(hb.buffer) - hb.bufferPos
+
 		if bytesRemaining < bytesToCopy {
 			bytesToCopy = bytesRemaining
 		}
 
-		if len(*data) < offset+bytesToCopy {
-			newSlice := make([]byte, offset+bytesToCopy)
-			copy(newSlice, *data)
-			*data = newSlice
-		}
+		*data = hb.appendSlice(*data, hb.buffer[hb.bufferPos:hb.bufferPos+bytesToCopy])
 
-		copy((*data)[offset:offset+bytesToCopy], hb.buffer[hb.bufferPos:hb.bufferPos+bytesToCopy])
-
-		offset += bytesToCopy
 		hb.bufferPos += bytesToCopy
 		bytesRemaining -= bytesToCopy
 	}
