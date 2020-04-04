@@ -13,22 +13,14 @@ This section describes how to build GKeepassXReader from source.
 
 1. *Install Go*
 
-    GKeepassXReader requires [Go 1.9][1] or later.
+    GKeepassXReader requires [Go 1.14][1] or later.
 
-1. *Install `dep`*
-
-    GKeepassXReader uses [`dep`][2] for dependency management.
-
-    ```bash
-    go get -u github.com/golang/dep/cmd/dep
-    ```
 
 ### Fetch the source
 
 ```bash
 go get -d github.com/simonhayward/gkeepassxreader
 cd $GOPATH/src/github.com/simonhayward/gkeepassxreader
-dep ensure -vendor-only
 ```
 
 ### Building
@@ -84,7 +76,7 @@ Password (press enter for no password):
 
 ```bash
 ./gkeepassxreader --db Database.kdbx search 'Sample Entry' -x
-Password (press enter for no password): 
+Password (press enter for no password):
 password copied to clipboard
 +----------------------------------+-----------+--------------+---------------------+--------------------------+-------+
 |               UUID               |   GROUP   |    TITLE     |      USERNAME       |           URL            | NOTES |
@@ -97,7 +89,7 @@ password copied to clipboard
 
 ```bash
 ./gkeepassxreader --db Database.kdbx search 'Sample Entry' --chrs 1,7,8
-Password (press enter for no password): 
+Password (press enter for no password):
 +----------------------------------+-----------+--------------+---------------------+--------------------------+-------+----------+
 |               UUID               |   GROUP   |    TITLE     |      USERNAME       |           URL            | NOTES | PASSWORD |
 +----------------------------------+-----------+--------------+---------------------+--------------------------+-------+----------+
@@ -139,7 +131,7 @@ Password (press enter for no password):
 
 ### Test Prerequisites
 
-[Ginkgo][3] is used to run the tests
+[Ginkgo][2] is used to run the tests
 
 ```bash
 cd $GOPATH/src/github.com/simonhayward/gkeepassxreader
@@ -148,5 +140,4 @@ make test
 
 [0]: https://www.keepassx.org/
 [1]: https://golang.org/
-[2]: https://github.com/golang/dep
-[3]: http://onsi.github.io/ginkgo/
+[2]: http://onsi.github.io/ginkgo/
