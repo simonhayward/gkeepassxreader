@@ -5,34 +5,34 @@
 A simple command line interface for [KeePassX][0] database files, to search and list entries.
 GKeepassXReader currently supports the KeePass 2 (.kdbx) database format.
 
-## Building from source
+## From source
 
-This section describes how to build GKeepassXReader from source.
-
-### Build Prerequisites
-
-1. *Install Go*
-
-    GKeepassXReader requires [Go 1.14][1] or later.
-
-
-### Fetch the source
+GKeepassXReader requires [Go 1.14][1] or later.
 
 ```bash
-go get -d github.com/simonhayward/gkeepassxreader
-cd $GOPATH/src/github.com/simonhayward/gkeepassxreader
+go get -v github.com/simonhayward/gkeepassxreader/...
 ```
 
-### Building
+This produces a binary in your `${GOPATH}/bin/gkeepassxreader`.
 
-To build GKeepassXReader, run:
+## Docker
+
+This creates a container from [Go 1.14][1], downloads the source, builds and installs it.
 
 ```bash
-cd $GOPATH/src/github.com/simonhayward/gkeepassxreader
-make build
+docker run golang:1.14-buster go get -v github.com/simonhayward/gkeepassxreader/...
 ```
 
-This produces a `gkeepassxreader` binary in your current working directory.
+Create an image of the most recent container.
+```bash
+docker commit $(docker ps -lq) gkeepassxreader-image
+```
+
+Run a container mounting the directories holding your database files.
+
+```bash
+docker run --rm -it -v `pwd`:/db-path gkeepassxreader-image gkeepassxreader --db=/db-path/db.kdbx list
+```
 
 ## Usage
 
@@ -127,9 +127,7 @@ Password (press enter for no password):
 
 ```
 
-## Running the unit tests
-
-### Test Prerequisites
+## Testing
 
 [Ginkgo][2] is used to run the tests
 
