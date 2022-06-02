@@ -3,65 +3,65 @@ package format_test
 import (
 	"os"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/simonhayward/gkeepassxreader/format"
+	"github.com/simonhayward/gkeepassxreader/format"
 	"github.com/simonhayward/gkeepassxreader/keys"
 )
 
 var _ = Describe("Search", func() {
 
 	var (
-		entryService    *EntryServiceOp
-		entryValues     []EntryValue
-		entriesExpected []Entry
+		entryService    *format.EntryServiceOp
+		entryValues     []format.EntryValue
+		entriesExpected []format.Entry
 	)
 
 	BeforeEach(func() {
-		entryService = &EntryServiceOp{}
-		entryValues = []EntryValue{
-			EntryValue{
+		entryService = &format.EntryServiceOp{}
+		entryValues = []format.EntryValue{
+			format.EntryValue{
 				PlainText: "Entry Number 1",
 			},
-			EntryValue{
+			format.EntryValue{
 				PlainText: "Entry Number 2",
 			},
-			EntryValue{
+			format.EntryValue{
 				PlainText: "QDKlkWFWQ6UJWbKyNPQs51Z8RcA5bYgU",
 			},
-			EntryValue{
+			format.EntryValue{
 				PlainText: "Entry Number 4",
 			},
-			EntryValue{
+			format.EntryValue{
 				PlainText: "A Title Repeated",
 			},
-			EntryValue{
+			format.EntryValue{
 				PlainText: "a title repeated",
 			},
 		}
 
-		entriesExpected = []Entry{
-			Entry{
+		entriesExpected = []format.Entry{
+			format.Entry{
 				Title: &entryValues[0],
 				UUID:  "u3uqCWOYDQ5UEpGGWoEjZLAMbWLzFkdC",
 			},
-			Entry{
+			format.Entry{
 				Title: &entryValues[1],
 				UUID:  "wba62vPxT7aQfocEhJjyu3lVVRXN6GX7",
 			},
-			Entry{
+			format.Entry{
 				Title: &entryValues[2],
 				UUID:  "qAcei1Z5fbcMTklrcikE4GccEYtlZx8p",
 			},
-			Entry{
+			format.Entry{
 				Title: &entryValues[3],
 				UUID:  "QDKlkWFWQ6UJWbKyNPQs51Z8RcA5bYgU",
 			},
-			Entry{
+			format.Entry{
 				Title: &entryValues[4],
 				UUID:  "YPNgv5b5mmWd1aAhNTofGdruRRefoqyJ",
 			},
-			Entry{
+			format.Entry{
 				Title: &entryValues[5],
 				UUID:  "qXEZG88PvPiZd3abw1fBin8CL8fJV2aQ",
 			},
@@ -128,7 +128,7 @@ var _ = Describe("Search", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			password := "password"
-			reader, err := OpenDatabase(keys.MasterKey(password, nil), db)
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
 			Expect(err).ToNot(HaveOccurred())
 
 			entryService.XMLReader = reader.XMLReader
@@ -145,7 +145,7 @@ var _ = Describe("Search", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			password := "password"
-			reader, err := OpenDatabase(keys.MasterKey(password, nil), db)
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
 			Expect(err).ToNot(HaveOccurred())
 
 			entryService.HistoricalEntries = true
@@ -177,12 +177,12 @@ var _ = Describe("Search", func() {
 var _ = Describe("Entries", func() {
 
 	var (
-		entryService *EntryServiceOp
+		entryService *format.EntryServiceOp
 		db           *os.File
 	)
 
 	BeforeEach(func() {
-		entryService = &EntryServiceOp{}
+		entryService = &format.EntryServiceOp{}
 	})
 
 	AfterEach(func() {
@@ -196,7 +196,7 @@ var _ = Describe("Entries", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			password := "masterpw"
-			reader, err := OpenDatabase(keys.MasterKey(password, nil), db)
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
 			Expect(err).ToNot(HaveOccurred())
 
 			entryService.XMLReader = reader.XMLReader
@@ -204,73 +204,73 @@ var _ = Describe("Entries", func() {
 			listEntries, err := entryService.List()
 			Expect(err).ToNot(HaveOccurred())
 
-			entryValues := []EntryValue{
-				EntryValue{
+			entryValues := []format.EntryValue{
+				format.EntryValue{
 					Data:         "Sample Entry",
 					Protected:    false,
 					PlainText:    "Sample Entry",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "Protected User Name",
 					Protected:    false,
 					PlainText:    "Protected User Name",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "ZapxLOhEQgWELdKbLMgCBp4=",
 					Protected:    true,
 					PlainText:    "",
 					RandomOffset: 0,
 					CipherText:   []byte{101, 170, 113, 44, 232, 68, 66, 5, 132, 45, 210, 155, 44, 200, 2, 6, 158},
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "http://www.somesite.com/",
 					Protected:    false,
 					PlainText:    "http://www.somesite.com/",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data: "Notes", Protected: false, PlainText: "Notes", RandomOffset: 0, CipherText: nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "Sample Entry",
 					Protected:    false,
 					PlainText:    "Sample Entry",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "Protected User Name",
 					Protected:    false,
 					PlainText:    "Protected User Name",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "u8PhlyS8ep0VjyRUP8Su88c=",
 					Protected:    true,
 					PlainText:    "",
 					RandomOffset: 17,
 					CipherText:   []byte{187, 195, 225, 151, 36, 188, 122, 157, 21, 143, 36, 84, 63, 196, 174, 243, 199},
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "http://www.somesite.com/",
 					Protected:    false,
 					PlainText:    "http://www.somesite.com/",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data: "Notes", Protected: false, PlainText: "Notes", RandomOffset: 0, CipherText: nil,
 				},
 			}
 
-			expectedEntries := []Entry{
-				Entry{
+			expectedEntries := []format.Entry{
+				format.Entry{
 					Group:      "Protected",
 					Title:      &entryValues[0],
 					Username:   &entryValues[1],
@@ -280,7 +280,7 @@ var _ = Describe("Entries", func() {
 					UUID:       "a8370aa88afd3c4593ce981eafb789c8",
 					Historical: false,
 				},
-				Entry{
+				format.Entry{
 					Group:      "Protected",
 					Title:      &entryValues[5],
 					Username:   &entryValues[6],
@@ -303,67 +303,67 @@ var _ = Describe("Entries", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			password := "password"
-			reader, err := OpenDatabase(keys.MasterKey(password, nil), db)
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
 			Expect(err).ToNot(HaveOccurred())
 
 			entryService.XMLReader = reader.XMLReader
 			listEntries, err := entryService.List()
 			Expect(err).ToNot(HaveOccurred())
 
-			entryValues := []EntryValue{
-				EntryValue{
+			entryValues := []format.EntryValue{
+				format.EntryValue{
 					Data:         "Sample Entry",
 					Protected:    false,
 					PlainText:    "Sample Entry",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "User Name",
 					Protected:    false,
 					PlainText:    "User Name",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "xzlvdrx7Cd8=",
 					Protected:    true,
 					PlainText:    "",
 					RandomOffset: 0,
 					CipherText:   []byte{199, 57, 111, 118, 188, 123, 9, 223},
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "http://keepass.info/",
 					Protected:    false,
 					PlainText:    "http://keepass.info/",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data: "Notes", Protected: false, PlainText: "Notes", RandomOffset: 0, CipherText: nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "Sample Entry #2",
 					Protected:    false,
 					PlainText:    "Sample Entry #2",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "Michael321",
 					Protected:    false,
 					PlainText:    "Michael321",
 					RandomOffset: 0,
 					CipherText:   nil,
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "cQPYAOM=",
 					Protected:    true,
 					PlainText:    "",
 					RandomOffset: 8,
 					CipherText:   []byte{113, 3, 216, 0, 227},
 				},
-				EntryValue{
+				format.EntryValue{
 					Data:         "http://keepass.info/help/kb/testform.html",
 					Protected:    false,
 					PlainText:    "http://keepass.info/help/kb/testform.html",
@@ -372,8 +372,8 @@ var _ = Describe("Entries", func() {
 				},
 			}
 
-			expectedEntries := []Entry{
-				Entry{
+			expectedEntries := []format.Entry{
+				format.Entry{
 					Group:    "example",
 					Title:    &entryValues[0],
 					Username: &entryValues[1],
@@ -382,7 +382,7 @@ var _ = Describe("Entries", func() {
 					Notes:    &entryValues[4],
 					UUID:     "640c38611c3ea4489ced361f54e43dbe",
 				},
-				Entry{
+				format.Entry{
 					Group:    "example",
 					Title:    &entryValues[5],
 					Username: &entryValues[6],
@@ -404,7 +404,7 @@ var _ = Describe("Entries", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			password := "a"
-			reader, err := OpenDatabase(keys.MasterKey(password, nil), db)
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
 			Expect(err).ToNot(HaveOccurred())
 
 			entryService.XMLReader = reader.XMLReader
@@ -438,7 +438,7 @@ var _ = Describe("Entries", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			password := "password"
-			reader, err := OpenDatabase(keys.MasterKey(password, nil), db)
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
 			Expect(err).ToNot(HaveOccurred())
 
 			entryService.XMLReader = reader.XMLReader
@@ -475,7 +475,7 @@ var _ = Describe("Entries", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			password := "password"
-			reader, err := OpenDatabase(keys.MasterKey(password, nil), db)
+			reader, err := format.OpenDatabase(keys.MasterKey(password, nil), db)
 			Expect(err).ToNot(HaveOccurred())
 
 			entryService.XMLReader = reader.XMLReader

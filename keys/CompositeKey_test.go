@@ -9,7 +9,7 @@ import (
 	"github.com/simonhayward/gkeepassxreader/cryptos/cryptosfakes"
 	"github.com/simonhayward/gkeepassxreader/keys"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
